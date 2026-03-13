@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}" class="h-full bg-gray-50">
+<html lang="ar" dir="rtl" class="h-full bg-gray-50">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -54,7 +54,7 @@
 </head>
 <body class="app-shell">
     <div class="nav-progress" id="navProgress"><div class="nav-progress-bar" id="navProgressBar"></div></div>
-    <?php $isRtl = app()->getLocale() === 'ar'; ?>
+    <?php $isRtl = true; ?>
     <div
         class="flex h-full"
         x-data="{
