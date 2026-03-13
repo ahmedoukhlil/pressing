@@ -12,6 +12,7 @@ class Service extends Model
         'libelle',
         'libelle_ar',
         'icone',
+        'image',
         'prix',
         'actif',
         'ordre',

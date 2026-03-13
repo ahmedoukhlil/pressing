@@ -3,10 +3,14 @@
 namespace App\Livewire\Services;
 
 use App\Models\Service;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class ServiceForm extends Component
 {
+    use WithFileUploads;
+
     public ?int $serviceId = null;
     public string $libelle = '';
     public string $libelleAr = '';
@@ -14,6 +18,8 @@ class ServiceForm extends Component
     public string $prix = '';
     public int $ordre = 0;
     public bool $actif = true;
+    public $nouvelleImage = null;
+    public ?string $imageActuelle = null;
 
     public function mount(?int $id = null): void
     {
@@ -29,6 +35,17 @@ class ServiceForm extends Component
         $this->prix = (string) $s->prix;
         $this->ordre = $s->ordre;
         $this->actif = $s->actif;
+        $this->imageActuelle = $s->image;
+    }
+
+    public function supprimerImage(): void
+    {
+        if ($this->imageActuelle && $this->serviceId) {
+            Storage::disk('public')->delete($this->imageActuelle);
+            Service::findOrFail($this->serviceId)->update(['image' => null]);
+            $this->imageActuelle = null;
+        }
+        $this->nouvelleImage = null;
     }
 
     public function sauvegarder(): void
@@ -38,6 +55,7 @@ class ServiceForm extends Component
             'libelle' => ['nullable', 'string', 'max:100'],
             'prix' => ['required', 'numeric', 'min:0'],
             'ordre' => ['nullable', 'integer', 'min:0'],
+            'nouvelleImage' => ['nullable', 'image', 'max:2048'],
         ]);
 
         $data = [
@@ -48,6 +66,13 @@ class ServiceForm extends Component
             'ordre' => $this->ordre,
             'actif' => $this->actif,
         ];
+
+        if ($this->nouvelleImage) {
+            if ($this->imageActuelle) {
+                Storage::disk('public')->delete($this->imageActuelle);
+            }
+            $data['image'] = $this->nouvelleImage->store('services', 'public');
+        }
 
         if ($this->serviceId) {
             Service::findOrFail($this->serviceId)->update($data);

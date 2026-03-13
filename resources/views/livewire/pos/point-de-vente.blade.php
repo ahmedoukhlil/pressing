@@ -75,11 +75,15 @@
                                 : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50' }}"
                     >
                         @if($qteEnPanier > 0)
-                            <span class="absolute -top-2 -left-2 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white text-[10px] font-bold shadow-sm">
+                            <span class="absolute -top-2 -left-2 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white text-[10px] font-bold shadow-sm z-10">
                                 {{ $qteEnPanier }}
                             </span>
                         @endif
-                        <span class="text-2xl leading-none">{{ $service->icone ?: '🧺' }}</span>
+                        @if($service->image)
+                            <img src="{{ Storage::url($service->image) }}" alt="{{ $service->libelle_ar }}" class="h-10 w-10 rounded-md object-cover">
+                        @else
+                            <span class="text-2xl leading-none">{{ $service->icone ?: '🧺' }}</span>
+                        @endif
                         <span class="text-xs font-medium text-slate-800 leading-tight mt-1.5 line-clamp-1">{{ $service->libelle_ar ?: '-' }}</span>
                         <span class="text-[11px] text-slate-400 num-ltr mt-0.5">{{ number_format((float) $service->prix, 0) }} MRU</span>
                     </button>
