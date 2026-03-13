@@ -1,9 +1,24 @@
 <div class="page-container space-y-6">
+    @php
+        $exportParams = [
+            'groupe_par' => $groupePar,
+            'annee' => $annee,
+            'mois' => $mois,
+        ];
+    @endphp
 
     <div class="page-header">
         <div>
             <h1 class="page-title">الإيرادات والمصروفات</h1>
-            <p class="page-subtitle">متابعة الإيرادات والمصروفات حسب اليوم أو الشهر أو السنة.</p>
+            <p class="page-subtitle">واجهة مبسطة لمتابعة الأموال الداخلة (إيرادات) والأموال الخارجة (مصروفات).</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ route('exports.finances.details.excel', $exportParams) }}" class="btn-secondary text-xs">
+                <i class="fi fi-rr-file-excel mr-1"></i> تصدير التفاصيل Excel
+            </a>
+            <a href="{{ route('exports.finances.details.pdf', $exportParams) }}" class="btn-secondary text-xs">
+                <i class="fi fi-rr-file-pdf mr-1"></i> تصدير التفاصيل PDF
+            </a>
         </div>
     </div>
 
@@ -190,9 +205,17 @@
     <div class="card card-body space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
             <h2 class="text-base font-semibold text-slate-800">كشف تفصيلي للعمليات (إيرادات/مصروفات)</h2>
-            <span class="text-xs text-slate-500">عدد العمليات: {{ $this->operations->count() }}</span>
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs text-slate-500">عدد العمليات: {{ $this->operations->count() }}</span>
+                <a href="{{ route('exports.finances.details.excel', $exportParams) }}" class="btn-secondary !px-2.5 !py-1.5 !text-xs">
+                    <i class="fi fi-rr-file-excel mr-1"></i> Excel
+                </a>
+                <a href="{{ route('exports.finances.details.pdf', $exportParams) }}" class="btn-secondary !px-2.5 !py-1.5 !text-xs">
+                    <i class="fi fi-rr-file-pdf mr-1"></i> PDF
+                </a>
+            </div>
         </div>
-        <p class="text-xs text-slate-500">يعرض هذا الجدول التفاصيل حسب الفترة المختارة أعلاه (يومي / شهري / سنوي).</p>
+        <p class="text-xs text-slate-500">يعرض هذا الجدول كل عملية على حدة حسب الفترة المختارة أعلاه (يومي / شهري / سنوي).</p>
 
         <div class="table-wrap">
             <table class="table-base w-full table-fixed text-sm">

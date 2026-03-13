@@ -4,7 +4,7 @@
             <h1 class="page-title">الخدمات</h1>
             <p class="page-subtitle">قائمة الخدمات والأسعار.</p>
         </div>
-        <a href="{{ route('services.create') }}" class="btn-primary">خدمة جديدة</a>
+        <a href="{{ route('services.create') }}" wire:navigate class="btn-primary">خدمة جديدة</a>
     </div>
 
     <div class="card card-body mb-4">
@@ -25,7 +25,7 @@
                     <tr class="table-row">
                         <td class="table-td">{{ $service->libelle_ar ?: '-' }}</td>
                         <td class="table-td"><span class="num-ltr">{{ number_format((float) $service->prix, 2, ',', ' ') }} MRU</span></td>
-                        <td class="table-td text-right"><a href="{{ route('services.edit', $service->id) }}" class="text-blue-700 text-xs">تعديل</a></td>
+                        <td class="table-td text-right"><a href="{{ route('services.edit', $service->id) }}" wire:navigate class="text-blue-700 text-xs">تعديل</a></td>
                     </tr>
                 @empty
                     <tr><td colspan="3" class="table-td text-center text-gray-500">لا توجد خدمات.</td></tr>

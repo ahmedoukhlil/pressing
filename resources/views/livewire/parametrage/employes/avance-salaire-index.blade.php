@@ -12,10 +12,10 @@
         </div>
         <div class="flex gap-2">
             @if($vuePaiementSalaire)
-                <a href="{{ route('parametrage.employes.avances', $employe->id) }}" class="btn-secondary">عرض السلف</a>
+                <a href="{{ route('parametrage.employes.avances', $employe->id) }}" wire:navigate class="btn-secondary">عرض السلف</a>
                 <button wire:click="ouvrirPaiementSalaire" class="btn-primary">دفع الراتب</button>
             @else
-                <a href="{{ route('parametrage.employes.paiement', $employe->id) }}" class="btn-secondary">دفع الراتب</a>
+                <a href="{{ route('parametrage.employes.paiement', $employe->id) }}" wire:navigate class="btn-secondary">دفع الراتب</a>
                 <button wire:click="ouvrirFormAvance" class="btn-primary">سلفة جديدة</button>
             @endif
         </div>
@@ -74,7 +74,7 @@
             <div class="mt-3 flex gap-2">
                 <button type="submit" class="btn-primary" wire:loading.attr="disabled">تأكيد الدفع</button>
                 @if($vuePaiementSalaire)
-                    <a href="{{ route('parametrage.employes.avances', $employe->id) }}" class="btn-secondary">رجوع إلى السلف</a>
+                    <a href="{{ route('parametrage.employes.avances', $employe->id) }}" wire:navigate class="btn-secondary">رجوع إلى السلف</a>
                 @else
                     <button type="button" wire:click="$set('afficherPaiementSalaire', false)" class="btn-secondary">إغلاق</button>
                 @endif

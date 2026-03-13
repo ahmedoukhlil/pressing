@@ -1,12 +1,12 @@
 <nav x-data="{ open: false }">
     @php
         $links = [
-            ['label' => 'Dashboard', 'route' => 'dashboard', 'active' => 'dashboard'],
-            ['label' => 'Depot', 'route' => 'pos', 'active' => 'pos'],
-            ['label' => 'Commandes', 'route' => 'recherche', 'active' => 'recherche'],
-            ['label' => 'Clients', 'route' => 'clients.index', 'active' => 'clients.*'],
-            ['label' => 'Services', 'route' => 'services.index', 'active' => 'services.*'],
-            ['label' => 'Depenses', 'route' => 'depenses.index', 'active' => 'depenses.*'],
+            ['label' => 'لوحة التحكم', 'route' => 'dashboard', 'active' => 'dashboard'],
+            ['label' => 'إيداع الملابس', 'route' => 'pos', 'active' => 'pos'],
+            ['label' => 'الطلبات', 'route' => 'recherche', 'active' => 'recherche'],
+            ['label' => 'الزبناء', 'route' => 'clients.index', 'active' => 'clients.*'],
+            ['label' => 'الخدمات', 'route' => 'services.index', 'active' => 'services.*'],
+            ['label' => 'المصروفات', 'route' => 'depenses.index', 'active' => 'depenses.*'],
         ];
     @endphp
 
@@ -19,7 +19,7 @@
             </button>
             <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
                 <x-application-logo class="block h-8 w-auto fill-current text-gray-800" />
-                <span class="text-sm font-semibold text-slate-700">Pressing</span>
+                <span class="text-sm font-semibold text-slate-700">{{ config('app.name') }}</span>
             </a>
             <div class="w-9"></div>
         </div>
@@ -29,7 +29,7 @@
         <div class="h-16 px-4 flex items-center border-b border-gray-100">
             <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
                 <x-application-logo class="block h-8 w-auto fill-current text-gray-800" />
-                <span class="text-base font-semibold text-slate-700">Pressing</span>
+                <span class="text-base font-semibold text-slate-700">{{ config('app.name') }}</span>
             </a>
         </div>
 
@@ -45,8 +45,8 @@
 
             @role('gerant')
                 <div class="pt-3 mt-3 border-t border-gray-100 space-y-1">
-                    <a href="{{ route('admin.users.index') }}" class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ request()->routeIs('admin.users.*') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">Utilisateurs</a>
-                    <a href="{{ route('admin.roles.index') }}" class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ request()->routeIs('admin.roles.*') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">Roles</a>
+                    <a href="{{ route('admin.users.index') }}" class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ request()->routeIs('admin.users.*') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">المستخدمون</a>
+                    <a href="{{ route('admin.roles.index') }}" class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ request()->routeIs('admin.roles.*') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">الأدوار</a>
                 </div>
             @endrole
         </div>
@@ -56,10 +56,10 @@
                 <div class="text-sm font-medium text-slate-800">{{ Auth::user()->name }}</div>
                 <div class="text-xs text-slate-500">{{ Auth::user()->email }}</div>
             </div>
-            <a href="{{ route('profile.edit') }}" class="block rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">Profil</a>
+            <a href="{{ route('profile.edit') }}" class="block rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">الملف الشخصي</a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit" class="mt-1 w-full text-left rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50">Deconnexion</button>
+                <button type="submit" class="mt-1 w-full text-left rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50">تسجيل الخروج</button>
             </form>
         </div>
     </aside>
@@ -84,7 +84,7 @@
         <div class="h-16 px-4 flex items-center justify-between border-b border-gray-100">
             <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
                 <x-application-logo class="block h-8 w-auto fill-current text-gray-800" />
-                <span class="text-base font-semibold text-slate-700">Pressing</span>
+                <span class="text-base font-semibold text-slate-700">{{ config('app.name') }}</span>
             </a>
             <button @click="open = false" class="rounded-md border border-gray-200 p-2 text-slate-600">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -106,8 +106,8 @@
 
             @role('gerant')
                 <div class="pt-3 mt-3 border-t border-gray-100 space-y-1">
-                    <a href="{{ route('admin.users.index') }}" @click="open = false" class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ request()->routeIs('admin.users.*') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">Utilisateurs</a>
-                    <a href="{{ route('admin.roles.index') }}" @click="open = false" class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ request()->routeIs('admin.roles.*') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">Roles</a>
+                    <a href="{{ route('admin.users.index') }}" @click="open = false" class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ request()->routeIs('admin.users.*') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">المستخدمون</a>
+                    <a href="{{ route('admin.roles.index') }}" @click="open = false" class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ request()->routeIs('admin.roles.*') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">الأدوار</a>
                 </div>
             @endrole
         </div>
@@ -117,10 +117,10 @@
                 <div class="text-sm font-medium text-slate-800">{{ Auth::user()->name }}</div>
                 <div class="text-xs text-slate-500">{{ Auth::user()->email }}</div>
             </div>
-            <a href="{{ route('profile.edit') }}" @click="open = false" class="block rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">Profil</a>
+            <a href="{{ route('profile.edit') }}" @click="open = false" class="block rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">الملف الشخصي</a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit" class="mt-1 w-full text-left rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50">Deconnexion</button>
+                <button type="submit" class="mt-1 w-full text-left rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50">تسجيل الخروج</button>
             </form>
         </div>
     </aside>

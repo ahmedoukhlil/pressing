@@ -53,7 +53,7 @@
             <label class="inline-flex items-center gap-2 text-sm"><input wire:model.live="actif" type="checkbox" class="rounded border-slate-300"> نشط</label>
             <div class="flex gap-2">
                 <button type="submit" class="btn-primary" wire:loading.attr="disabled">حفظ</button>
-                <a href="{{ route('parametrage.employes.index') }}" class="btn-secondary">رجوع</a>
+                <a href="{{ route('parametrage.employes.index') }}" wire:navigate class="btn-secondary">رجوع</a>
             </div>
         </div>
     </form>

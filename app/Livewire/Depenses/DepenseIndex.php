@@ -16,6 +16,7 @@ class DepenseIndex extends Component
     use WithPagination;
 
     public string $filtrePeriode = 'mois';
+    public bool $afficherFiltresAvances = false;
     public $filtreType = null;
     public string $filtreCategorie = 'toutes';
     public string $recherche = '';
@@ -32,6 +33,7 @@ class DepenseIndex extends Component
     public $fkIdFournisseur = null;
     public string $reference = '';
     public string $notes = '';
+    public ?int $depenseAAnnulerId = null;
 
     public function mount(): void
     {
@@ -125,10 +127,10 @@ class DepenseIndex extends Component
 
         if ($this->editId) {
             Depense::query()->forCurrentSuccursale()->findOrFail($this->editId)->update($data);
-            $this->dispatch('notify', type: 'success', message: 'Depense mise a jour.');
+            $this->dispatch('notify', type: 'success', message: 'تم تحديث المصروف.');
         } else {
             Depense::create($data);
-            $this->dispatch('notify', type: 'success', message: 'Depense enregistree.');
+            $this->dispatch('notify', type: 'success', message: 'تم حفظ المصروف.');
         }
 
         $this->fermerForm();
@@ -145,10 +147,25 @@ class DepenseIndex extends Component
         $this->resetValidation();
     }
 
-    public function annuler(int $id): void
+    public function demanderAnnulation(int $id): void
     {
-        Depense::query()->forCurrentSuccursale()->findOrFail($id)->update(['statut' => 'annulee']);
-        $this->dispatch('notify', type: 'success', message: 'Depense annulee.');
+        $this->depenseAAnnulerId = $id;
+    }
+
+    public function annulerAnnulation(): void
+    {
+        $this->depenseAAnnulerId = null;
+    }
+
+    public function confirmerAnnulation(): void
+    {
+        if (!$this->depenseAAnnulerId) {
+            return;
+        }
+
+        Depense::query()->forCurrentSuccursale()->findOrFail($this->depenseAAnnulerId)->update(['statut' => 'annulee']);
+        $this->dispatch('notify', type: 'success', message: 'تم إلغاء المصروف.');
+        $this->depenseAAnnulerId = null;
     }
 
     public function getTotalPeriodeProperty(): float

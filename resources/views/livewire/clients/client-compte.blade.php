@@ -4,7 +4,7 @@
             <h1 class="page-title">حساب الزبون</h1>
             <p class="page-subtitle">{{ $client->full_name }} | {{ $client->telephone }}</p>
         </div>
-        <a href="{{ route('clients.index') }}" class="btn-secondary">الرجوع إلى الزبناء</a>
+        <a href="{{ route('clients.index') }}" wire:navigate class="btn-secondary">الرجوع إلى الزبناء</a>
     </div>
 
     <div class="card card-body mb-5">

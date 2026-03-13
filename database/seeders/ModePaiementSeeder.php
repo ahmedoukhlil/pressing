@@ -13,10 +13,10 @@ class ModePaiementSeeder extends Seeder
     public function run(): void
     {
         $modes = [
-            ['libelle' => 'Espèces', 'code' => 'especes', 'icone' => '💵', 'ordre' => 1],
-            ['libelle' => 'Carte bancaire', 'code' => 'carte', 'icone' => '💳', 'ordre' => 2],
-            ['libelle' => 'Virement', 'code' => 'virement', 'icone' => '🏦', 'ordre' => 3],
-            ['libelle' => 'Non payé', 'code' => 'non_paye', 'icone' => '⏳', 'ordre' => 4],
+            ['libelle' => 'نقدا', 'code' => 'especes', 'icone' => '💵', 'ordre' => 1],
+            ['libelle' => 'بطاقة بنكية', 'code' => 'carte', 'icone' => '💳', 'ordre' => 2],
+            ['libelle' => 'تحويل بنكي', 'code' => 'virement', 'icone' => '🏦', 'ordre' => 3],
+            ['libelle' => 'غير مدفوع', 'code' => 'non_paye', 'icone' => '⏳', 'ordre' => 4],
         ];
 
         foreach ($modes as $mode) {

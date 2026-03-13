@@ -5,6 +5,8 @@ namespace App\Livewire\Admin\Users;
 use App\Models\User;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class UserIndex extends Component
 {
@@ -30,6 +32,13 @@ class UserIndex extends Component
 
         return view('livewire.admin.users.user-index', [
             'users' => $query->paginate(20),
+            'roles' => Role::query()
+                ->withCount('permissions')
+                ->orderBy('name')
+                ->get(),
+            'permissions' => Permission::query()
+                ->orderBy('name')
+                ->get(),
         ])->layout('layouts.app');
     }
 }

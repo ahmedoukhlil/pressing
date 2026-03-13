@@ -16,6 +16,8 @@ class ModePaiementIndex extends Component
     public string $icone = '';
     public int $ordre = 0;
     public bool $actif = true;
+    public ?int $modeActionId = null;
+    public string $modeActionType = '';
 
     public function nouveauMode(): void
     {
@@ -58,14 +60,49 @@ class ModePaiementIndex extends Component
                 $data['code'] = $mode->code;
             }
             $mode->update($data);
-            $this->dispatch('notify', type: 'success', message: 'Mode de paiement mis a jour.');
+            $this->dispatch('notify', type: 'success', message: 'تم تحديث طريقة الدفع.');
         } else {
             ModePaiement::create($data);
-            $this->dispatch('notify', type: 'success', message: 'Mode de paiement cree.');
+            $this->dispatch('notify', type: 'success', message: 'تم إنشاء طريقة الدفع.');
         }
 
         $this->afficherForm = false;
         $this->reset(['libelle', 'code', 'icone', 'ordre', 'editId']);
+    }
+
+    public function demanderToggleActif(int $id): void
+    {
+        $this->modeActionId = $id;
+        $this->modeActionType = 'toggle';
+    }
+
+    public function demanderSuppression(int $id): void
+    {
+        $this->modeActionId = $id;
+        $this->modeActionType = 'delete';
+    }
+
+    public function annulerActionMode(): void
+    {
+        $this->modeActionId = null;
+        $this->modeActionType = '';
+    }
+
+    public function confirmerActionMode(): void
+    {
+        if (!$this->modeActionId || $this->modeActionType === '') {
+            return;
+        }
+
+        if ($this->modeActionType === 'toggle') {
+            $this->toggleActif($this->modeActionId);
+        }
+
+        if ($this->modeActionType === 'delete') {
+            $this->supprimer($this->modeActionId);
+        }
+
+        $this->annulerActionMode();
     }
 
     public function toggleActif(int $id): void
@@ -75,7 +112,7 @@ class ModePaiementIndex extends Component
             return;
         }
         $mode->update(['actif' => !$mode->actif]);
-        $this->dispatch('notify', type: 'success', message: 'Statut du mode mis a jour.');
+        $this->dispatch('notify', type: 'success', message: 'تم تحديث حالة طريقة الدفع.');
     }
 
     public function supprimer(int $id): void
@@ -85,7 +122,7 @@ class ModePaiementIndex extends Component
             return;
         }
         $mode->delete();
-        $this->dispatch('notify', type: 'success', message: 'Mode de paiement supprime.');
+        $this->dispatch('notify', type: 'success', message: 'تم حذف طريقة الدفع.');
     }
 
     public function render()

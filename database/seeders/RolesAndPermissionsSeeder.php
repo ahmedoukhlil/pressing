@@ -38,7 +38,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
         $admin = User::firstOrCreate(
             ['email' => 'admin@pressing.local'],
-            ['name' => 'Admin Pressing', 'password' => bcrypt('password')]
+            ['name' => 'مدير المغسلة', 'password' => bcrypt('password')]
         );
 
         $admin->assignRole('gerant');

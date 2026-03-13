@@ -18,6 +18,7 @@ class RechercheCommande extends Component
     public string $filtreStatut = '';
     public string $dateDebut = '';
     public string $dateFin = '';
+    public bool $afficherFiltresAvances = false;
     public array $selectionCommandes = [];
     public bool $selectionPage = false;
     public string $statutGroupe = '';
@@ -28,6 +29,12 @@ class RechercheCommande extends Component
     public string $remisePourcentage = '0';
     public string $modeReglement = 'especes';
     public bool $afficherPaiement = false;
+    public bool $afficherConfirmationStatut = false;
+    public ?int $commandeAConfirmerId = null;
+    public string $statutAConfirmer = '';
+    public bool $afficherConfirmationSuppression = false;
+    public ?int $commandeASupprimerId = null;
+    public string $numeroCommandeASupprimer = '';
 
     public string $messageSucces = '';
     public string $messageErreur = '';
@@ -74,6 +81,7 @@ class RechercheCommande extends Component
         $this->filtreStatut = '';
         $this->dateDebut = '';
         $this->dateFin = '';
+        $this->afficherFiltresAvances = false;
         $this->resetSelectionGroupe();
         $this->resetPage();
     }
@@ -161,12 +169,12 @@ class RechercheCommande extends Component
         $resteApresRemise = max(0, round($resteInitial - $remiseMontant, 2));
 
         if ($this->montantAPayer > $resteApresRemise) {
-            $this->addError('montantAPayer', 'Le montant depasse le reste apres remise.');
+            $this->addError('montantAPayer', 'المبلغ يتجاوز المتبقي بعد الخصم.');
             return;
         }
 
         if ($this->montantAPayer <= 0 && $remiseMontant <= 0) {
-            $this->addError('montantAPayer', 'Veuillez saisir un paiement ou une remise.');
+            $this->addError('montantAPayer', 'يرجى إدخال مبلغ أو خصم.');
             return;
         }
 
@@ -203,7 +211,7 @@ class RechercheCommande extends Component
 
         $this->commande->refresh();
         $this->afficherPaiement = false;
-        $this->messageSucces = 'Paiement enregistre avec succes.';
+        $this->messageSucces = 'تم تسجيل الدفع بنجاح.';
         $this->dispatch('notify', type: 'success', message: $this->messageSucces);
     }
 
@@ -213,7 +221,7 @@ class RechercheCommande extends Component
         $transitionsAutorisees = $this->getTransitionsAutorisees();
 
         if (!in_array($nouveauStatut, $transitionsAutorisees[$commande->statut] ?? [], true)) {
-            $this->messageErreur = 'Transition de statut invalide.';
+            $this->messageErreur = 'الانتقال بين الحالات غير صالح.';
             $this->dispatch('notify', type: 'error', message: $this->messageErreur);
             return;
         }
@@ -223,7 +231,7 @@ class RechercheCommande extends Component
             'date_livraison_reelle' => $nouveauStatut === 'livre' ? now() : $commande->date_livraison_reelle,
         ]);
 
-        $this->messageSucces = 'Statut mis a jour.';
+        $this->messageSucces = 'تم تحديث حالة الطلب.';
         $this->dispatch('notify', type: 'success', message: $this->messageSucces);
         if ($this->commandeSelectionneeId === $commande->id) {
             $this->selectionnerCommande($commande->id);
@@ -232,7 +240,90 @@ class RechercheCommande extends Component
 
     public function confirmerChangementStatut(int $commandeId, string $nouveauStatut): void
     {
-        $this->dispatch('confirm-statuts', commandeId: $commandeId, statut: $nouveauStatut);
+        $this->commandeAConfirmerId = $commandeId;
+        $this->statutAConfirmer = $nouveauStatut;
+        $this->afficherConfirmationStatut = true;
+    }
+
+    public function validerChangementStatut(): void
+    {
+        if (!$this->commandeAConfirmerId || $this->statutAConfirmer === '') {
+            $this->afficherConfirmationStatut = false;
+            return;
+        }
+
+        $this->changerStatut($this->commandeAConfirmerId, $this->statutAConfirmer);
+        $this->annulerConfirmationStatut();
+    }
+
+    public function annulerConfirmationStatut(): void
+    {
+        $this->afficherConfirmationStatut = false;
+        $this->commandeAConfirmerId = null;
+        $this->statutAConfirmer = '';
+    }
+
+    public function demanderSuppressionCommande(int $commandeId): void
+    {
+        if (!auth()->user()?->hasRole('gerant')) {
+            abort(403);
+        }
+
+        $commande = Commande::query()
+            ->forCurrentSuccursale()
+            ->findOrFail($commandeId);
+
+        $this->commandeASupprimerId = $commande->id;
+        $this->numeroCommandeASupprimer = $commande->numero_commande;
+        $this->afficherConfirmationSuppression = true;
+    }
+
+    public function annulerSuppressionCommande(): void
+    {
+        $this->afficherConfirmationSuppression = false;
+        $this->commandeASupprimerId = null;
+        $this->numeroCommandeASupprimer = '';
+    }
+
+    public function confirmerSuppressionCommande(): void
+    {
+        if (!auth()->user()?->hasRole('gerant')) {
+            abort(403);
+        }
+
+        if (!$this->commandeASupprimerId) {
+            $this->annulerSuppressionCommande();
+            return;
+        }
+
+        $commande = Commande::query()
+            ->forCurrentSuccursale()
+            ->find($this->commandeASupprimerId);
+
+        if (!$commande) {
+            $this->dispatch('notify', type: 'error', message: 'الطلب غير موجود.');
+            $this->annulerSuppressionCommande();
+            return;
+        }
+
+        DB::transaction(function () use ($commande): void {
+            $commande->delete();
+        });
+
+        $this->selectionCommandes = collect($this->selectionCommandes)
+            ->map(fn ($id) => (int) $id)
+            ->reject(fn ($id) => $id === $commande->id)
+            ->values()
+            ->toArray();
+
+        if ($this->commandeSelectionneeId === $commande->id) {
+            $this->commandeSelectionneeId = null;
+            $this->commande = null;
+            $this->afficherPaiement = false;
+        }
+
+        $this->dispatch('notify', type: 'success', message: 'تم حذف الطلب بنجاح.');
+        $this->annulerSuppressionCommande();
     }
 
     public function appliquerChangementStatutGroupe(): void

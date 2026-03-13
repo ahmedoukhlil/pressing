@@ -40,7 +40,7 @@
         </div>
         <div class="md:col-span-2 flex gap-2">
             <button type="submit" class="btn-primary" wire:loading.attr="disabled">حفظ</button>
-            <a href="{{ route('services.index') }}" class="btn-secondary">رجوع</a>
+            <a href="{{ route('services.index') }}" wire:navigate class="btn-secondary">رجوع</a>
         </div>
     </form>
 </div>

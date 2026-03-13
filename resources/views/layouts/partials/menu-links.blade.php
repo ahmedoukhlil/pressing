@@ -5,7 +5,7 @@
         ['route' => 'recherche', 'match' => 'recherche', 'label' => 'الطلبات', 'icon' => 'commandes'],
         ['route' => 'clients.index', 'match' => 'clients.*', 'label' => 'الزبناء', 'icon' => 'clients'],
         ['route' => 'depenses.index', 'match' => 'depenses.*', 'label' => 'المصروفات', 'icon' => 'depenses'],
-        ['route' => 'finances.recettes-depenses', 'match' => 'finances.*', 'label' => 'الإيرادات', 'icon' => 'finances'],
+        ['route' => 'finances.recettes-depenses', 'match' => 'finances.*', 'label' => 'الإيرادات والمصروفات', 'icon' => 'finances'],
     ];
 
     $parametrageLinks = [
@@ -20,7 +20,6 @@
     $adminLinks = [
         ['route' => 'admin.succursales.index', 'match' => 'admin.succursales.*', 'label' => 'الفروع', 'icon' => 'succursales'],
         ['route' => 'admin.users.index', 'match' => 'admin.users.*', 'label' => 'المستخدمون', 'icon' => 'users'],
-        ['route' => 'admin.roles.index', 'match' => 'admin.roles.*', 'label' => 'الأدوار', 'icon' => 'roles'],
     ];
 
     $iconMap = [
@@ -48,7 +47,7 @@
 @endphp
 
 @foreach($mainLinks as $link)
-    <a href="{{ route($link['route']) }}" title="{{ $link['label'] }}" class="{{ $menuItemClass }} {{ request()->routeIs($link['match']) ? $menuActiveClass : $menuInactiveClass }}">
+    <a href="{{ route($link['route']) }}" wire:navigate title="{{ $link['label'] }}" class="{{ $menuItemClass }} {{ request()->routeIs($link['match']) ? $menuActiveClass : $menuInactiveClass }}">
         @if($withCollapse)
             <span class="inline-flex h-5 w-5 items-center justify-center shrink-0">
                 {!! $renderIcon($link['icon']) !!}
@@ -69,7 +68,7 @@
         <div class="{{ $menuSectionClass }}">الإعدادات</div>
     @endif
     @foreach($parametrageLinks as $link)
-        <a href="{{ route($link['route']) }}" title="{{ $link['label'] }}" class="{{ $menuItemClass }} {{ request()->routeIs($link['match']) ? $menuActiveClass : $menuInactiveClass }}">
+        <a href="{{ route($link['route']) }}" wire:navigate title="{{ $link['label'] }}" class="{{ $menuItemClass }} {{ request()->routeIs($link['match']) ? $menuActiveClass : $menuInactiveClass }}">
             @if($withCollapse)
                 <span class="inline-flex h-5 w-5 items-center justify-center shrink-0">
                     {!! $renderIcon($link['icon']) !!}
@@ -89,7 +88,7 @@
         <div class="{{ $menuSectionClass }}">الإدارة</div>
     @endif
     @foreach($adminLinks as $link)
-        <a href="{{ route($link['route']) }}" title="{{ $link['label'] }}" class="{{ $menuItemClass }} {{ request()->routeIs($link['match']) ? $menuActiveClass : $menuInactiveClass }}">
+        <a href="{{ route($link['route']) }}" wire:navigate title="{{ $link['label'] }}" class="{{ $menuItemClass }} {{ request()->routeIs($link['match']) ? $menuActiveClass : $menuInactiveClass }}">
             @if($withCollapse)
                 <span class="inline-flex h-5 w-5 items-center justify-center shrink-0">
                     {!! $renderIcon($link['icon']) !!}

@@ -1,4 +1,4 @@
-<div class="page-container space-y-6">
+<div class="page-container space-y-6" x-data="{ simpleMode: true }">
     @php
         $commandesTotal = max(1, (int) $stats['commandes_total']);
         $tauxEnCours = round(((int) $stats['en_cours'] / $commandesTotal) * 100);
@@ -11,8 +11,12 @@
             <p class="page-subtitle">ملخص حي لأداء المغسلة اليوم مع مؤشرات واضحة لاتخاذ القرار بسرعة.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-            <a href="{{ route('pos') }}" class="btn-primary">إيداع جديد</a>
-            <a href="{{ route('recherche') }}" class="btn-secondary">متابعة الطلبات</a>
+            <button type="button" class="btn-secondary" @click="simpleMode = !simpleMode">
+                <span x-show="simpleMode">عرض التفاصيل</span>
+                <span x-show="!simpleMode">عرض مختصر</span>
+            </button>
+            <a href="{{ route('pos') }}" wire:navigate class="btn-primary">إيداع جديد</a>
+            <a href="{{ route('recherche') }}" wire:navigate class="btn-secondary">متابعة الطلبات</a>
         </div>
     </div>
 
@@ -36,28 +40,28 @@
 
     <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
         <div class="card card-body">
-            <p class="text-sm text-slate-500">📦 طلبات اليوم</p>
+            <p class="text-sm text-slate-500 flex items-center gap-2"><i class="fi fi-rr-box-open text-blue-600"></i> طلبات اليوم</p>
             <p class="text-2xl font-bold mt-1 text-slate-900"><span class="num-ltr">{{ $stats['commandes_du_jour'] }}</span></p>
             <p class="text-xs text-slate-500 mt-1">من إجمالي <span class="num-ltr">{{ $stats['commandes_total'] }}</span> طلب</p>
         </div>
         <div class="card card-body">
-            <p class="text-sm text-slate-500">💰 المبيعات المحصلة اليوم</p>
+            <p class="text-sm text-slate-500 flex items-center gap-2"><i class="fi fi-rr-money-bill-wave text-emerald-600"></i> المبيعات المحصلة اليوم</p>
             <p class="text-2xl font-bold mt-1 text-emerald-700"><span class="num-ltr" dir="ltr">{{ number_format($stats['ca_jour'], 2, ',', ' ') }} MRU</span></p>
             <p class="text-xs text-slate-500 mt-1">مبالغ تم تحصيلها فعليًا</p>
         </div>
         <div class="card card-body">
-            <p class="text-sm text-slate-500">⏳ قيد المعالجة</p>
+            <p class="text-sm text-slate-500 flex items-center gap-2"><i class="fi fi-rr-hourglass-end text-amber-600"></i> قيد المعالجة</p>
             <p class="text-2xl font-bold mt-1 text-amber-700"><span class="num-ltr">{{ $stats['en_cours'] }}</span></p>
             <p class="text-xs text-slate-500 mt-1">تمثل {{ $tauxEnCours }}% من الطلبات</p>
         </div>
         <div class="card card-body">
-            <p class="text-sm text-slate-500">✅ طلبات جاهزة للتسليم</p>
+            <p class="text-sm text-slate-500 flex items-center gap-2"><i class="fi fi-rr-badge-check text-cyan-700"></i> طلبات جاهزة للتسليم</p>
             <p class="text-2xl font-bold mt-1 text-cyan-700"><span class="num-ltr">{{ $stats['pret'] }}</span></p>
             <p class="text-xs text-slate-500 mt-1">تمثل {{ $tauxPret }}% من الطلبات</p>
         </div>
     </div>
 
-    <div class="grid md:grid-cols-3 gap-4">
+    <div class="grid md:grid-cols-3 gap-4" x-show="!simpleMode" x-transition>
         <div class="card card-body">
             <p class="text-sm text-slate-500">إجمالي الطلبات</p>
             <p class="text-xl font-semibold mt-1"><span class="num-ltr">{{ $stats['commandes_total'] }}</span></p>
@@ -81,14 +85,14 @@
         </div>
     </div>
 
-    <div class="grid md:grid-cols-2 gap-4">
+    <div class="grid md:grid-cols-2 gap-4" x-show="!simpleMode" x-transition>
         <div class="card card-body">
-            <p class="text-sm text-slate-500">📉 مصروفات الشهر</p>
+            <p class="text-sm text-slate-500 flex items-center gap-2"><i class="fi fi-rr-money text-rose-700"></i> مصروفات الشهر</p>
             <p class="text-2xl font-bold mt-1 text-rose-700"><span class="num-ltr" dir="ltr">{{ number_format($stats['depenses_mois'], 2, ',', ' ') }} MRU</span></p>
             <p class="text-xs text-slate-500 mt-2">يساعدك هذا المؤشر على تتبع ضغط التكاليف خلال الشهر.</p>
         </div>
         <div class="card card-body">
-            <p class="text-sm text-slate-500">⚖️ صافي اليوم (تحصيلي - مصروفات الشهر)</p>
+            <p class="text-sm text-slate-500 flex items-center gap-2"><i class="fi fi-rr-scale text-indigo-700"></i> صافي اليوم (تحصيلي - مصروفات الشهر)</p>
             <p class="text-2xl font-bold mt-1 {{ ($stats['ca_jour'] - $stats['depenses_mois']) >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">
                 <span class="num-ltr" dir="ltr">{{ number_format($stats['ca_jour'] - $stats['depenses_mois'], 2, ',', ' ') }} MRU</span>
             </p>
@@ -96,7 +100,7 @@
         </div>
     </div>
 
-    <div class="grid lg:grid-cols-2 gap-4">
+    <div class="grid lg:grid-cols-2 gap-4" x-show="!simpleMode" x-transition>
         <div class="card card-body">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="card-title mb-0">طلبات تقترب من 7 أيام</h2>

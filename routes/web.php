@@ -68,6 +68,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/commandes/{commande}/ticket', [CommandeController::class, 'ticket'])->name('commandes.ticket');
     Route::get('/exports/commandes.pdf', [ExportController::class, 'commandesPdf'])->name('exports.commandes.pdf');
     Route::get('/exports/depenses.pdf', [ExportController::class, 'depensesPdf'])->name('exports.depenses.pdf');
+    Route::get('/exports/finances/details.pdf', [ExportController::class, 'financesDetailsPdf'])->name('exports.finances.details.pdf');
+    Route::get('/exports/finances/details.excel', [ExportController::class, 'financesDetailsExcel'])->name('exports.finances.details.excel');
 
     Route::middleware('role:gerant')->group(function () {
         Route::get('/parametrage/modes-paiement', ModePaiementIndex::class)->name('parametrage.modes-paiement.index');

@@ -61,10 +61,16 @@
                         </span>
                     </td>
                     <td class="table-td text-right">
-                        <button wire:click="editer({{ $mode->id }})" class="text-blue-700 text-xs">تعديل</button>
-                        <button wire:click="toggleActif({{ $mode->id }})" onclick="return confirm('تأكيد تغيير الحالة؟')" class="text-orange-700 text-xs ml-2">{{ $mode->actif ? 'تعطيل' : 'تفعيل' }}</button>
+                        <button wire:click="editer({{ $mode->id }})" class="btn-ghost !px-2.5 !py-1.5 !text-xs text-blue-700">
+                            <i class="fi fi-rr-edit mr-1"></i> تعديل
+                        </button>
+                        <button wire:click="demanderToggleActif({{ $mode->id }})" class="btn-ghost !px-2.5 !py-1.5 !text-xs text-orange-700">
+                            <i class="fi fi-rr-power mr-1"></i> {{ $mode->actif ? 'تعطيل' : 'تفعيل' }}
+                        </button>
                         @if(!$mode->est_systeme)
-                            <button wire:click="supprimer({{ $mode->id }})" onclick="return confirm('حذف طريقة الدفع هذه؟')" class="text-red-700 text-xs ml-2">حذف</button>
+                            <button wire:click="demanderSuppression({{ $mode->id }})" class="btn-ghost !px-2.5 !py-1.5 !text-xs text-red-700 hover:!bg-red-50">
+                                <i class="fi fi-rr-trash mr-1"></i> حذف
+                            </button>
                         @else
                             <span class="text-xs text-gray-400 ml-2">نظام</span>
                         @endif
@@ -76,4 +82,27 @@
             </tbody>
         </table>
     </div>
+
+    @if($modeActionId && $modeActionType !== '')
+        <div class="modal-overlay flex items-center justify-center p-4">
+            <div class="modal-panel max-w-md p-4 space-y-3">
+                <div class="text-lg font-medium">
+                    {{ $modeActionType === 'delete' ? 'تأكيد حذف طريقة الدفع' : 'تأكيد تغيير الحالة' }}
+                </div>
+                <p class="text-sm text-slate-600">
+                    @if($modeActionType === 'delete')
+                        هل تريد حذف طريقة الدفع المحددة؟
+                    @else
+                        هل تريد تغيير حالة طريقة الدفع المحددة؟
+                    @endif
+                </p>
+                <div class="flex justify-end gap-2">
+                    <button wire:click="annulerActionMode" class="btn-secondary">إلغاء</button>
+                    <button wire:click="confirmerActionMode" class="{{ $modeActionType === 'delete' ? 'btn-danger' : 'btn-primary' }}">
+                        تأكيد
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

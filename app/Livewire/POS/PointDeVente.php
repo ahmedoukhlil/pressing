@@ -30,6 +30,7 @@ class PointDeVente extends Component
     public string $notes = '';
 
     public bool $afficherModalPaiement = false;
+    public bool $afficherModalConfirmation = false;
     public ?int $commandeCreeId = null;
 
     public function mount(): void
@@ -217,12 +218,12 @@ class PointDeVente extends Component
     public function ouvrirModalPaiement(): void
     {
         if (!$this->clientSelectionneId) {
-            $this->addError('client', 'Veuillez selectionner un client.');
+            $this->addError('client', 'يرجى اختيار زبون.');
             return;
         }
 
         if (empty($this->panier)) {
-            $this->addError('panier', 'Le panier est vide.');
+            $this->addError('panier', 'السلة فارغة.');
             return;
         }
 
@@ -249,6 +250,10 @@ class PointDeVente extends Component
 
     public function validerCommande(): void
     {
+        if (!$this->afficherModalConfirmation) {
+            return;
+        }
+
         $this->validate([
             'clientSelectionneId' => ['required', 'exists:clients,id'],
             'modeReglement' => ['required', 'in:especes,carte,virement,non_paye'],
@@ -266,7 +271,7 @@ class PointDeVente extends Component
         }
 
         if ($this->montantPaye > 0 && $this->modeReglement === 'non_paye') {
-            $this->addError('modeReglement', 'Le mode Non paye est reserve aux commandes sans versement.');
+            $this->addError('modeReglement', 'طريقة غير مدفوع مخصصة فقط للطلبات بدون دفع.');
             return;
         }
 
@@ -326,20 +331,48 @@ class PointDeVente extends Component
         });
 
         $this->afficherModalPaiement = false;
+        $this->afficherModalConfirmation = false;
 
-        $message = 'Commande creee avec succes.';
+        $message = 'تم إنشاء الطلب بنجاح.';
         if ($this->montantPaye <= 0) {
-            $message = 'Depot enregistre sans paiement.';
+            $message = 'تم تسجيل الإيداع بدون دفع.';
         } elseif ($this->montantPaye < $this->montant_total) {
-            $message = 'Depot enregistre avec avance client.';
+            $message = 'تم تسجيل الإيداع مع دفعة مقدمة.';
         } elseif ($this->montantPaye >= $this->montant_total) {
-            $message = 'Depot enregistre et facture completement payee.';
+            $message = 'تم تسجيل الإيداع والدفع بالكامل.';
         }
 
         session()->flash('success', $message);
         $this->dispatch('notify', type: 'success', message: $message);
         $this->resetFormCommande();
         $this->dispatch('imprimerTicket', commandeId: $this->commandeCreeId);
+    }
+
+    public function confirmerCommande(): void
+    {
+        $this->validate([
+            'clientSelectionneId' => ['required', 'exists:clients,id'],
+            'modeReglement' => ['required', 'in:especes,carte,virement,non_paye'],
+            'montantPaye' => ['required', 'numeric', 'min:0', 'max:' . $this->montant_total_net],
+            'remisePourcentage' => ['required', 'numeric', 'min:0', 'max:100'],
+        ]);
+
+        if ($this->montantPaye <= 0) {
+            $this->modeReglement = 'non_paye';
+        }
+
+        if ($this->montantPaye > 0 && $this->modeReglement === 'non_paye') {
+            $this->addError('modeReglement', 'طريقة غير مدفوع مخصصة فقط للطلبات بدون دفع.');
+            return;
+        }
+
+        $this->afficherModalConfirmation = true;
+    }
+
+    public function fermerModalPaiement(): void
+    {
+        $this->afficherModalPaiement = false;
+        $this->afficherModalConfirmation = false;
     }
 
     private function resetFormClient(): void
@@ -366,6 +399,7 @@ class PointDeVente extends Component
         $this->modeReglement = 'especes';
         $this->montantPaye = 0;
         $this->afficherModalPaiement = false;
+        $this->afficherModalConfirmation = false;
         $this->resetErrorBag();
         $this->resetValidation();
     }

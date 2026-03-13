@@ -5,8 +5,8 @@
             <p class="page-subtitle">لائحة الزبناء الذين لديهم مبالغ متبقية للدفع.</p>
         </div>
         <div class="flex items-center gap-2">
-            <a href="{{ route('clients.index') }}" class="btn-secondary">جميع الزبناء</a>
-            <a href="{{ route('clients.create') }}" class="btn-primary">زبون جديد</a>
+            <a href="{{ route('clients.index') }}" wire:navigate class="btn-secondary">جميع الزبناء</a>
+            <a href="{{ route('clients.create') }}" wire:navigate class="btn-primary">زبون جديد</a>
         </div>
     </div>
 
@@ -31,9 +31,18 @@
                         <td class="table-td">{{ $client->telephone }}</td>
                         <td class="table-td text-amber-700 font-semibold">{{ number_format((float) ($client->total_dette ?? 0), 2) }} MRU</td>
                         <td class="table-td text-right">
-                            <div class="inline-flex items-center gap-3">
-                                <a href="{{ route('clients.compte', $client->id) }}" class="text-emerald-700 text-xs">تفاصيل الحساب</a>
-                                <a href="{{ route('clients.edit', $client->id) }}" class="text-blue-700 text-xs">تعديل</a>
+                            <div class="inline-flex items-center gap-2">
+                                <a href="{{ route('clients.compte', $client->id) }}" wire:navigate class="btn-ghost !px-2.5 !py-1.5 !text-xs text-emerald-700">
+                                    <i class="fi fi-rr-receipt mr-1"></i> تفاصيل الحساب
+                                </a>
+                                <a href="{{ route('clients.edit', $client->id) }}" wire:navigate class="btn-ghost !px-2.5 !py-1.5 !text-xs text-blue-700">
+                                    <i class="fi fi-rr-edit mr-1"></i> تعديل
+                                </a>
+                                @role('gerant')
+                                    <button wire:click="demanderSuppressionClient({{ $client->id }})" class="btn-ghost !px-2.5 !py-1.5 !text-xs text-red-600">
+                                        <i class="fi fi-rr-trash mr-1"></i> حذف
+                                    </button>
+                                @endrole
                             </div>
                         </td>
                     </tr>
@@ -44,4 +53,22 @@
         </table>
     </div>
     <div class="mt-3">{{ $clients->links() }}</div>
+
+    @if($afficherConfirmationSuppression)
+        <div class="modal-overlay flex items-center justify-center p-4">
+            <div class="modal-panel max-w-md p-4 space-y-3">
+                <h3 class="text-base font-semibold text-slate-900">تأكيد حذف الزبون</h3>
+                <p class="text-sm text-slate-600">
+                    هل تريد حذف الزبون <strong>{{ $clientASupprimerNom }}</strong>؟
+                </p>
+                <p class="text-xs text-slate-500">
+                    لا يمكن حذف الزبون إذا كان مرتبطًا بطلبات.
+                </p>
+                <div class="flex justify-end gap-2">
+                    <button wire:click="annulerSuppressionClient" class="btn-secondary">إلغاء</button>
+                    <button wire:click="confirmerSuppressionClient" class="btn-danger">حذف</button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

@@ -4,7 +4,7 @@
             <h1 class="page-title">الموظفون</h1>
             <p class="page-subtitle">إدارة الموظفين والوظائف والوصول إلى السلف.</p>
         </div>
-        <a href="{{ route('parametrage.employes.create') }}" class="btn-primary">موظف جديد</a>
+        <a href="{{ route('parametrage.employes.create') }}" wire:navigate class="btn-primary">موظف جديد</a>
     </div>
 
     <div class="card card-body mb-4">
@@ -28,9 +28,9 @@
                         <td class="table-td">{{ $e->poste?->libelle ?? '-' }}</td>
                         <td class="table-td"><span class="num-ltr">{{ number_format((float) $e->salaire_brut, 2, ',', ' ') }} MRU</span></td>
                         <td class="table-td text-right">
-                            <a href="{{ route('parametrage.employes.edit', $e->id) }}" class="text-blue-700 text-xs">تعديل</a>
-                            <a href="{{ route('parametrage.employes.avances', $e->id) }}" class="text-green-700 text-xs ml-2">السلف</a>
-                            <a href="{{ route('parametrage.employes.paiement', $e->id) }}" class="text-indigo-700 text-xs ml-2">دفع الرواتب</a>
+                            <a href="{{ route('parametrage.employes.edit', $e->id) }}" wire:navigate class="text-blue-700 text-xs">تعديل</a>
+                            <a href="{{ route('parametrage.employes.avances', $e->id) }}" wire:navigate class="text-green-700 text-xs ml-2">السلف</a>
+                            <a href="{{ route('parametrage.employes.paiement', $e->id) }}" wire:navigate class="text-indigo-700 text-xs ml-2">دفع الرواتب</a>
                         </td>
                     </tr>
                 @empty

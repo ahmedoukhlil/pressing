@@ -11,14 +11,24 @@
     </div>
 
     <div class="card card-body mb-4">
-        <div class="grid md:grid-cols-4 gap-2">
+        <div class="grid md:grid-cols-2 gap-2">
         <select wire:model.live="filtrePeriode" class="form-field">
             <option value="jour">اليوم</option>
             <option value="semaine">الأسبوع</option>
             <option value="mois">الشهر</option>
             <option value="tous">الكل</option>
         </select>
-        <select wire:model.live="filtreCategorie" class="form-field">
+        <input wire:model.live.debounce.500ms="recherche" type="text" placeholder="ابحث في الوصف" class="form-field">
+        </div>
+        <div class="mt-2">
+            <button type="button" wire:click="$toggle('afficherFiltresAvances')" class="btn-secondary text-xs">
+                <i class="fi fi-rr-settings-sliders mr-1"></i>
+                {{ $afficherFiltresAvances ? 'إخفاء الفلاتر المتقدمة' : 'إظهار الفلاتر المتقدمة' }}
+            </button>
+        </div>
+        @if($afficherFiltresAvances)
+            <div class="mt-2 grid md:grid-cols-2 gap-2">
+                <select wire:model.live="filtreCategorie" class="form-field">
             <option value="toutes">كل المصروفات</option>
             <option value="ordinaires">مصروفات عادية</option>
             <option value="employes">مصروفات الموظفين</option>
@@ -29,8 +39,8 @@
                 <option value="{{ $type->id }}">{{ $type->libelle }}</option>
             @endforeach
         </select>
-        <input wire:model.live.debounce.500ms="recherche" type="text" placeholder="ابحث في الوصف" class="form-field">
-        </div>
+            </div>
+        @endif
     </div>
 
     <div class="mb-3 text-sm text-gray-700">إجمالي الفترة: <strong class="num-ltr">{{ number_format((float) $totalPeriode, 2, ',', ' ') }} MRU</strong></div>
@@ -143,8 +153,14 @@
                             @if($estDepenseEmploye)
                                 <span class="text-xs text-slate-400">تلقائي</span>
                             @else
-                                <button wire:click="editer({{ $depense->id }})" class="text-blue-700 text-xs">تعديل</button>
-                                <button wire:click="annuler({{ $depense->id }})" onclick="return confirm('تأكيد إلغاء هذا المصروف؟')" class="text-red-700 text-xs ml-2">إلغاء</button>
+                                <div class="inline-flex items-center gap-2">
+                                    <button wire:click="editer({{ $depense->id }})" class="btn-ghost !px-2.5 !py-1.5 !text-xs text-blue-700">
+                                        <i class="fi fi-rr-edit mr-1"></i> تعديل
+                                    </button>
+                                    <button wire:click="demanderAnnulation({{ $depense->id }})" class="btn-ghost !px-2.5 !py-1.5 !text-xs text-red-700 hover:!bg-red-50">
+                                        <i class="fi fi-rr-ban mr-1"></i> إلغاء
+                                    </button>
+                                </div>
                             @endif
                         </td>
                     </tr>
@@ -155,4 +171,17 @@
         </table>
     </div>
     <div class="mt-3">{{ $depenses->links() }}</div>
+
+    @if($depenseAAnnulerId)
+        <div class="modal-overlay flex items-center justify-center p-4">
+            <div class="modal-panel max-w-md p-4 space-y-3">
+                <div class="text-lg font-medium">تأكيد إلغاء المصروف</div>
+                <p class="text-sm text-slate-600">هل تريد بالتأكيد إلغاء هذا المصروف؟ لا يمكن التراجع عن العملية.</p>
+                <div class="flex justify-end gap-2">
+                    <button wire:click="annulerAnnulation" class="btn-secondary">رجوع</button>
+                    <button wire:click="confirmerAnnulation" class="btn-danger">تأكيد الإلغاء</button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

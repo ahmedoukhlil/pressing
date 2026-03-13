@@ -24,25 +24,34 @@
                 <option value="livre">مسلّم</option>
             </select>
         </div>
-        <div class="mt-2 grid md:grid-cols-3 gap-2 items-end">
-            <div>
-                <label class="text-xs text-slate-500 mb-0.5 block">من تاريخ</label>
-                <input wire:model.live="dateDebut" type="date" class="form-field">
-            </div>
-            <div>
-                <label class="text-xs text-slate-500 mb-0.5 block">إلى تاريخ</label>
-                <input wire:model.live="dateFin" type="date" class="form-field">
-            </div>
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+            <button type="button" wire:click="$toggle('afficherFiltresAvances')" class="btn-secondary text-xs">
+                <i class="fi fi-rr-settings-sliders mr-1"></i>
+                {{ $afficherFiltresAvances ? 'إخفاء الفلاتر المتقدمة' : 'إظهار الفلاتر المتقدمة' }}
+            </button>
             @if($recherche !== '' || $filtreStatut !== '' || $dateDebut !== '' || $dateFin !== '')
-                <button wire:click="reinitialiserFiltres" class="btn-secondary h-[38px]">
-                    ✕ مسح الفلاتر
+                <button wire:click="reinitialiserFiltres" class="btn-secondary text-xs">
+                    <i class="fi fi-rr-cross-small mr-1"></i> مسح الفلاتر
                 </button>
             @endif
         </div>
-        <div class="mt-3 flex flex-wrap items-center gap-2">
+        @if($afficherFiltresAvances)
+            <div class="mt-2 grid md:grid-cols-2 gap-2 items-end">
+                <div>
+                    <label class="text-xs text-slate-500 mb-0.5 block">من تاريخ</label>
+                    <input wire:model.live="dateDebut" type="date" class="form-field">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-500 mb-0.5 block">إلى تاريخ</label>
+                    <input wire:model.live="dateFin" type="date" class="form-field">
+                </div>
+            </div>
+        @endif
+        <div class="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
+            <span class="text-xs text-slate-500">إجراءات جماعية (فقط للطلبات قيد المعالجة)</span>
             <select wire:model="statutGroupe" class="form-field max-w-xs">
-                <option value="">تغيير حالة المحدد</option>
-                <option value="pret">تحويل (قيد المعالجة) إلى جاهز</option>
+                <option value="">اختر الإجراء</option>
+                <option value="pret">تحويل المحدد إلى جاهز</option>
             </select>
             <button wire:click="appliquerChangementStatutGroupe" class="btn-secondary" @disabled(empty($selectionCommandes))>
                 تطبيق جماعي
@@ -79,7 +88,12 @@
                                 </span>
                             </td>
                             <td class="table-td text-right">
-                                <button wire:click="selectionnerCommande({{ $item->id }})" class="btn-ghost text-blue-700">فتح</button>
+                                <div class="inline-flex items-center gap-2">
+                                    <button wire:click="selectionnerCommande({{ $item->id }})" class="btn-ghost text-blue-700">فتح</button>
+                                    @role('gerant')
+                                        <button wire:click="demanderSuppressionCommande({{ $item->id }})" class="btn-ghost text-red-600">حذف</button>
+                                    @endrole
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -139,6 +153,9 @@
                         <button wire:click="confirmerChangementStatut({{ $commande->id }}, 'livre')" class="btn-primary">تحديد كمسلّم</button>
                     @endif
                     <a href="{{ route('commandes.ticket', $commande) }}" target="_blank" class="btn-secondary">طباعة الوصل</a>
+                    @role('gerant')
+                        <button wire:click="demanderSuppressionCommande({{ $commande->id }})" class="btn-danger">حذف الطلب</button>
+                    @endrole
                 </div>
             @else
                 <div class="text-sm text-gray-500">اختر طلبًا لعرض التفاصيل.</div>
@@ -186,20 +203,43 @@
             </div>
         </div>
     @endif
+
+    @if($afficherConfirmationStatut)
+        <div class="modal-overlay flex items-center justify-center p-4">
+            <div class="modal-panel max-w-md p-4 space-y-3">
+                <div class="text-lg font-medium">تأكيد تغيير الحالة</div>
+                <p class="text-sm text-slate-600">
+                    @if($statutAConfirmer === 'pret')
+                        هل تريد تحديد الطلب كـ <strong>جاهز</strong>؟
+                    @elseif($statutAConfirmer === 'livre')
+                        هل تريد تحديد الطلب كـ <strong>مسلّم</strong>؟
+                    @else
+                        هل تريد تغيير حالة الطلب؟
+                    @endif
+                </p>
+                <div class="flex justify-end gap-2">
+                    <button wire:click="annulerConfirmationStatut" class="btn-secondary">إلغاء</button>
+                    <button wire:click="validerChangementStatut" class="btn-primary">تأكيد</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if($afficherConfirmationSuppression)
+        <div class="modal-overlay flex items-center justify-center p-4">
+            <div class="modal-panel max-w-md p-4 space-y-3">
+                <div class="text-lg font-medium text-red-700">تأكيد حذف الطلب</div>
+                <p class="text-sm text-slate-600">
+                    هل تريد حذف الطلب <strong>{{ $numeroCommandeASupprimer }}</strong>؟
+                </p>
+                <p class="text-xs text-slate-500">
+                    سيتم حذف تفاصيل الطلب نهائيًا.
+                </p>
+                <div class="flex justify-end gap-2">
+                    <button wire:click="annulerSuppressionCommande" class="btn-secondary">إلغاء</button>
+                    <button wire:click="confirmerSuppressionCommande" class="btn-danger">حذف</button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
-
-@script
-<script>
-    $wire.on('confirm-statuts', ({ commandeId, statut }) => {
-        const labels = {
-            en_cours: 'هل تريد تحويل الطلب إلى قيد المعالجة؟',
-            pret: 'هل تريد تحديد الطلب كجاهز؟',
-            livre: 'هل تريد تحديد الطلب كمسلّم؟'
-        };
-
-        if (confirm(labels[statut] ?? 'تأكيد تغيير الحالة؟')) {
-            $wire.changerStatut(commandeId, statut);
-        }
-    });
-</script>
-@endscript
