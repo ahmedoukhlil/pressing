@@ -1,0 +1,41 @@
+<?php
+
+namespace App\Livewire\Clients;
+
+use App\Models\Client;
+use Livewire\Component;
+use Livewire\WithPagination;
+
+class ClientEndettesIndex extends Component
+{
+    use WithPagination;
+
+    public string $recherche = '';
+
+    public function updatingRecherche(): void
+    {
+        $this->resetPage();
+    }
+
+    public function render()
+    {
+        $clients = Client::query()
+            ->forCurrentSuccursale()
+            ->whereHas('commandes', fn ($q) => $q->where('reste_a_payer', '>', 0))
+            ->withSum(
+                ['commandes as total_dette' => fn ($q) => $q->where('reste_a_payer', '>', 0)],
+                'reste_a_payer'
+            )
+            ->when($this->recherche, fn ($q) => $q
+                ->where(fn ($sub) => $sub
+                    ->where('nom', 'like', "%{$this->recherche}%")
+                    ->orWhere('prenom', 'like', "%{$this->recherche}%")
+                    ->orWhere('telephone', 'like', "%{$this->recherche}%")))
+            ->orderByDesc('total_dette')
+            ->paginate(20);
+
+        return view('livewire.clients.client-endettes-index', [
+            'clients' => $clients,
+        ])->layout('layouts.app');
+    }
+}

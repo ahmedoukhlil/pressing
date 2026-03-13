@@ -1,0 +1,144 @@
+<div class="page-container space-y-6">
+    @php
+        $commandesTotal = max(1, (int) $stats['commandes_total']);
+        $tauxEnCours = round(((int) $stats['en_cours'] / $commandesTotal) * 100);
+        $tauxPret = round(((int) $stats['pret'] / $commandesTotal) * 100);
+    @endphp
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">لوحة تحكم {{ config('app.name') }}</h1>
+            <p class="page-subtitle">ملخص حي لأداء المغسلة اليوم مع مؤشرات واضحة لاتخاذ القرار بسرعة.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('pos') }}" class="btn-primary">إيداع جديد</a>
+            <a href="{{ route('recherche') }}" class="btn-secondary">متابعة الطلبات</a>
+        </div>
+    </div>
+
+    <div class="card card-body bg-gradient-to-l from-blue-600 to-indigo-600 text-white border-0">
+        <div class="grid gap-4 md:grid-cols-3 items-center">
+            <div class="md:col-span-2">
+                <p class="text-sm text-blue-100">نظرة اليوم</p>
+                <p class="text-2xl font-bold mt-1">حركة المغسلة الآن</p>
+                <p class="text-sm text-blue-100 mt-2">
+                    عدد طلبات اليوم <span class="num-ltr font-semibold text-white">{{ $stats['commandes_du_jour'] }}</span>
+                    و مبيعات محصلة <span class="num-ltr font-semibold text-white">{{ number_format($stats['ca_jour'], 2, ',', ' ') }} MRU</span>
+                </p>
+            </div>
+            <div class="rounded-xl bg-white/15 p-4 backdrop-blur-sm">
+                <p class="text-xs text-blue-100">العملاء المسجلون</p>
+                <p class="text-3xl font-bold mt-1"><span class="num-ltr">{{ $stats['clients'] }}</span></p>
+                <p class="text-xs text-blue-100 mt-1">قاعدة زبناء نشطة</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div class="card card-body">
+            <p class="text-sm text-slate-500">📦 طلبات اليوم</p>
+            <p class="text-2xl font-bold mt-1 text-slate-900"><span class="num-ltr">{{ $stats['commandes_du_jour'] }}</span></p>
+            <p class="text-xs text-slate-500 mt-1">من إجمالي <span class="num-ltr">{{ $stats['commandes_total'] }}</span> طلب</p>
+        </div>
+        <div class="card card-body">
+            <p class="text-sm text-slate-500">💰 المبيعات المحصلة اليوم</p>
+            <p class="text-2xl font-bold mt-1 text-emerald-700"><span class="num-ltr" dir="ltr">{{ number_format($stats['ca_jour'], 2, ',', ' ') }} MRU</span></p>
+            <p class="text-xs text-slate-500 mt-1">مبالغ تم تحصيلها فعليًا</p>
+        </div>
+        <div class="card card-body">
+            <p class="text-sm text-slate-500">⏳ قيد المعالجة</p>
+            <p class="text-2xl font-bold mt-1 text-amber-700"><span class="num-ltr">{{ $stats['en_cours'] }}</span></p>
+            <p class="text-xs text-slate-500 mt-1">تمثل {{ $tauxEnCours }}% من الطلبات</p>
+        </div>
+        <div class="card card-body">
+            <p class="text-sm text-slate-500">✅ طلبات جاهزة للتسليم</p>
+            <p class="text-2xl font-bold mt-1 text-cyan-700"><span class="num-ltr">{{ $stats['pret'] }}</span></p>
+            <p class="text-xs text-slate-500 mt-1">تمثل {{ $tauxPret }}% من الطلبات</p>
+        </div>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-4">
+        <div class="card card-body">
+            <p class="text-sm text-slate-500">إجمالي الطلبات</p>
+            <p class="text-xl font-semibold mt-1"><span class="num-ltr">{{ $stats['commandes_total'] }}</span></p>
+            <div class="mt-3 h-2 w-full rounded-full bg-slate-100">
+                <div class="h-2 rounded-full bg-indigo-500" style="width: 100%"></div>
+            </div>
+        </div>
+        <div class="card card-body">
+            <p class="text-sm text-slate-500">قيد المعالجة</p>
+            <p class="text-xl font-semibold mt-1"><span class="num-ltr">{{ $stats['en_cours'] }}</span></p>
+            <div class="mt-3 h-2 w-full rounded-full bg-slate-100">
+                <div class="h-2 rounded-full bg-amber-500" style="width: {{ $tauxEnCours }}%"></div>
+            </div>
+        </div>
+        <div class="card card-body">
+            <p class="text-sm text-slate-500">جاهزة للتسليم</p>
+            <p class="text-xl font-semibold mt-1"><span class="num-ltr">{{ $stats['pret'] }}</span></p>
+            <div class="mt-3 h-2 w-full rounded-full bg-slate-100">
+                <div class="h-2 rounded-full bg-cyan-500" style="width: {{ $tauxPret }}%"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4">
+        <div class="card card-body">
+            <p class="text-sm text-slate-500">📉 مصروفات الشهر</p>
+            <p class="text-2xl font-bold mt-1 text-rose-700"><span class="num-ltr" dir="ltr">{{ number_format($stats['depenses_mois'], 2, ',', ' ') }} MRU</span></p>
+            <p class="text-xs text-slate-500 mt-2">يساعدك هذا المؤشر على تتبع ضغط التكاليف خلال الشهر.</p>
+        </div>
+        <div class="card card-body">
+            <p class="text-sm text-slate-500">⚖️ صافي اليوم (تحصيلي - مصروفات الشهر)</p>
+            <p class="text-2xl font-bold mt-1 {{ ($stats['ca_jour'] - $stats['depenses_mois']) >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">
+                <span class="num-ltr" dir="ltr">{{ number_format($stats['ca_jour'] - $stats['depenses_mois'], 2, ',', ' ') }} MRU</span>
+            </p>
+            <p class="text-xs text-slate-500 mt-2">مؤشر سريع فقط للمراقبة (ليس ربحًا محاسبيًا نهائيًا).</p>
+        </div>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-4">
+        <div class="card card-body">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="card-title mb-0">طلبات تقترب من 7 أيام</h2>
+                <span class="status-badge status-warning"><span class="num-ltr">{{ $commandesProchesEcheance->count() }}</span></span>
+            </div>
+
+            @forelse($commandesProchesEcheance as $commande)
+                <div class="flex items-center justify-between gap-2 py-2 border-b border-slate-100 last:border-b-0">
+                    <div class="text-sm">
+                        <div class="font-medium text-slate-900">{{ $commande->numero_commande }} - {{ $commande->client?->full_name }}</div>
+                        <div class="text-slate-500">
+                            منذ <span class="num-ltr">{{ $commande->jours_depuis_depot }}</span> أيام |
+                            {{ optional($commande->date_depot)->format('d/m/Y') }}
+                        </div>
+                    </div>
+                    <a href="tel:{{ $commande->client?->telephone }}" class="btn-secondary text-xs">اتصال</a>
+                </div>
+            @empty
+                <div class="text-sm text-slate-500">لا توجد طلبات قريبة من الحد حاليا.</div>
+            @endforelse
+        </div>
+
+        <div class="card card-body">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="card-title mb-0">طلبات تجاوزت 7 أيام</h2>
+                <span class="status-badge status-danger"><span class="num-ltr">{{ $commandesHorsDelai->count() }}</span></span>
+            </div>
+
+            @forelse($commandesHorsDelai as $commande)
+                <div class="flex items-center justify-between gap-2 py-2 border-b border-slate-100 last:border-b-0">
+                    <div class="text-sm">
+                        <div class="font-medium text-slate-900">{{ $commande->numero_commande }} - {{ $commande->client?->full_name }}</div>
+                        <div class="text-slate-500">
+                            منذ <span class="num-ltr">{{ $commande->jours_depuis_depot }}</span> أيام |
+                            {{ optional($commande->date_depot)->format('d/m/Y') }}
+                        </div>
+                    </div>
+                    <a href="tel:{{ $commande->client?->telephone }}" class="btn-secondary text-xs">اتصال</a>
+                </div>
+            @empty
+                <div class="text-sm text-slate-500">لا توجد طلبات متجاوزة للحد حاليا.</div>
+            @endforelse
+        </div>
+    </div>
+</div>

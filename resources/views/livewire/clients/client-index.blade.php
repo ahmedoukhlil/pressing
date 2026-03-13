@@ -1,0 +1,45 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">الزبناء</h1>
+            <p class="page-subtitle">إدارة الزبناء مع البحث والترتيب والتعديل.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ route('clients.endettes') }}" class="btn-secondary">الزبناء المدينون</a>
+            <a href="{{ route('clients.create') }}" class="btn-primary">زبون جديد</a>
+        </div>
+    </div>
+
+    <div class="card card-body mb-4">
+        <input wire:model.live.debounce.500ms="recherche" type="text" placeholder="ابحث بالاسم أو رقم الهاتف" class="form-field md:max-w-md">
+    </div>
+
+    <div class="table-wrap">
+        <table class="table-base">
+            <thead class="table-head">
+                <tr>
+                    <th class="table-th"><button wire:click="sortBy('nom')" class="font-medium">الاسم</button></th>
+                    <th class="table-th"><button wire:click="sortBy('telephone')" class="font-medium">الهاتف</button></th>
+                    <th class="table-th text-right">الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($clients as $client)
+                    <tr class="table-row">
+                        <td class="table-td">{{ $client->full_name }}</td>
+                        <td class="table-td">{{ $client->telephone }}</td>
+                        <td class="table-td text-right">
+                            <div class="inline-flex items-center gap-3">
+                                <a href="{{ route('clients.compte', $client->id) }}" class="text-emerald-700 text-xs">تفاصيل الحساب</a>
+                                <a href="{{ route('clients.edit', $client->id) }}" class="text-blue-700 text-xs">تعديل</a>
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="3" class="table-td text-center text-gray-500">لا يوجد زبناء.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-3">{{ $clients->links() }}</div>
+</div>
