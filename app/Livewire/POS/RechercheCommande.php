@@ -5,6 +5,7 @@ namespace App\Livewire\POS;
 use App\Models\CaisseOperation;
 use App\Models\Commande;
 use App\Models\ModePaiement;
+use App\Support\LoyaltyPointsService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -35,6 +36,7 @@ class RechercheCommande extends Component
     public bool $afficherConfirmationSuppression = false;
     public ?int $commandeASupprimerId = null;
     public string $numeroCommandeASupprimer = '';
+    public bool $afficherRappelsModal = false;
 
     public string $messageSucces = '';
     public string $messageErreur = '';
@@ -194,7 +196,7 @@ class RechercheCommande extends Component
             ]);
 
             if ($this->montantAPayer > 0) {
-                CaisseOperation::create([
+                $operation = CaisseOperation::create([
                     'fk_id_succursale' => $this->commande->fk_id_succursale,
                     'date_operation' => now(),
                     'montant_operation' => $this->montantAPayer,
@@ -206,6 +208,15 @@ class RechercheCommande extends Component
                     'fk_id_user' => auth()->id(),
                     'mode_paiement' => $this->modeReglement,
                 ]);
+
+                LoyaltyPointsService::creditFromPayment(
+                    (int) $this->commande->fk_id_succursale,
+                    (int) $this->commande->fk_id_client,
+                    (int) $this->commande->id,
+                    (int) $operation->id,
+                    (float) $this->montantAPayer,
+                    auth()->id(),
+                );
             }
         });
 
@@ -283,6 +294,22 @@ class RechercheCommande extends Component
         $this->afficherConfirmationSuppression = false;
         $this->commandeASupprimerId = null;
         $this->numeroCommandeASupprimer = '';
+    }
+
+    public function ouvrirRappelsModal(): void
+    {
+        $this->afficherRappelsModal = true;
+    }
+
+    public function fermerRappelsModal(): void
+    {
+        $this->afficherRappelsModal = false;
+    }
+
+    public function ouvrirCommandeDepuisRappel(int $commandeId): void
+    {
+        $this->selectionnerCommande($commandeId);
+        $this->fermerRappelsModal();
     }
 
     public function confirmerSuppressionCommande(): void
@@ -393,11 +420,20 @@ class RechercheCommande extends Component
     {
         $resultats = $this->buildQuery()->paginate(15);
         $modesPaiement = ModePaiement::actif()->get();
+        $commandesARappeler = Commande::query()
+            ->forCurrentSuccursale()
+            ->with('client')
+            ->whereIn('statut', ['en_cours', 'pret'])
+            ->whereDate('date_depot', '<=', now()->subDays(7)->toDateString())
+            ->orderBy('date_depot')
+            ->limit(20)
+            ->get();
 
         return view('livewire.pos.recherche-commande', [
             'resultats' => $resultats,
             'commande' => $this->commande,
             'modesPaiement' => $modesPaiement,
+            'commandesARappeler' => $commandesARappeler,
         ])
             ->layout('layouts.app');
     }

@@ -10,6 +10,7 @@ use Livewire\Component;
 class ClientForm extends Component
 {
     public ?int $clientId = null;
+    public string $codeClient = '';
     public string $nom = '';
     public string $prenom = '';
     public string $telephone = '';
@@ -24,6 +25,7 @@ class ClientForm extends Component
 
         $c = Client::query()->forCurrentSuccursale()->findOrFail($id);
         $this->clientId = $c->id;
+        $this->codeClient = $c->code_client ?? '';
         $this->nom = $c->nom;
         $this->prenom = $c->prenom ?? '';
         $this->telephone = $c->telephone;

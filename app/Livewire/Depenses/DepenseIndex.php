@@ -3,6 +3,7 @@
 namespace App\Livewire\Depenses;
 
 use App\Models\Depense;
+use App\Models\Employe;
 use App\Models\Fournisseur;
 use App\Models\ModePaiement;
 use App\Models\TypeDepense;
@@ -31,9 +32,12 @@ class DepenseIndex extends Component
     public string $montant = '';
     public string $modePaiement = 'especes';
     public $fkIdFournisseur = null;
+    public $fkIdEmploye = null;
     public string $reference = '';
     public string $notes = '';
     public ?int $depenseAAnnulerId = null;
+    private const TYPE_SALAIRES_LABEL = 'الرواتب';
+    private const TYPE_TRANSPORT_LABEL = 'النقل';
 
     public function mount(): void
     {
@@ -61,6 +65,18 @@ class DepenseIndex extends Component
         $this->resetPage();
     }
 
+    public function updatedFkIdTypeDepense($value): void
+    {
+        $type = TypeDepense::query()->find($value);
+        $estTransport = $type?->libelle === self::TYPE_TRANSPORT_LABEL;
+
+        if ($estTransport) {
+            $this->fkIdFournisseur = null;
+        } else {
+            $this->fkIdEmploye = null;
+        }
+    }
+
     public function sortBy(string $field): void
     {
         if ($this->sortField === $field) {
@@ -73,7 +89,7 @@ class DepenseIndex extends Component
 
     public function nouvelleDepense(): void
     {
-        $this->reset(['designation', 'montant', 'fkIdTypeDepense', 'fkIdFournisseur', 'reference', 'notes', 'editId']);
+        $this->reset(['designation', 'montant', 'fkIdTypeDepense', 'fkIdFournisseur', 'fkIdEmploye', 'reference', 'notes', 'editId']);
         $this->dateDepense = now()->toDateString();
         $this->modePaiement = 'especes';
         $this->resetErrorBag();
@@ -91,6 +107,7 @@ class DepenseIndex extends Component
         $this->montant = (string) $d->montant;
         $this->modePaiement = $d->mode_paiement;
         $this->fkIdFournisseur = $d->fk_id_fournisseur;
+        $this->fkIdEmploye = $d->fk_id_employe;
         $this->reference = $d->reference ?? '';
         $this->notes = $d->notes ?? '';
         $this->resetErrorBag();
@@ -101,15 +118,41 @@ class DepenseIndex extends Component
     public function sauvegarder(): void
     {
         $codesModes = ModePaiement::actif()->pluck('code')->toArray();
+        $typeIdsSaisie = TypeDepense::actif()
+            ->where('libelle', '!=', self::TYPE_SALAIRES_LABEL)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->toArray();
 
         $this->validate([
             'dateDepense' => ['required', 'date'],
-            'fkIdTypeDepense' => ['required', 'exists:types_depenses,id'],
+            'fkIdTypeDepense' => ['required', Rule::in($typeIdsSaisie)],
             'designation' => ['required', 'string', 'max:255'],
             'montant' => ['required', 'numeric', 'min:0.01'],
             'modePaiement' => ['required', Rule::in($codesModes)],
-            'fkIdFournisseur' => ['nullable', 'exists:fournisseurs,id'],
+        ], [
+            'fkIdTypeDepense.in' => 'نوع "الرواتب" مخصص للإدخالات التلقائية فقط.',
         ]);
+
+        $typeSelectionne = TypeDepense::query()->find($this->fkIdTypeDepense);
+        $estTransport = $typeSelectionne?->libelle === self::TYPE_TRANSPORT_LABEL;
+
+        if ($estTransport) {
+            $this->validate([
+                'fkIdEmploye' => ['required', 'exists:employes,id'],
+            ], [
+                'fkIdEmploye.required' => 'يرجى اختيار الموظف لمصروف النقل.',
+                'fkIdEmploye.exists' => 'الموظف المختار غير صالح.',
+            ]);
+            $this->fkIdFournisseur = null;
+        } else {
+            $this->validate([
+                'fkIdFournisseur' => ['nullable', 'exists:fournisseurs,id'],
+            ], [
+                'fkIdFournisseur.exists' => 'المورد المختار غير صالح.',
+            ]);
+            $this->fkIdEmploye = null;
+        }
 
         $data = [
             'fk_id_succursale' => SuccursaleContext::currentIdForWrite(),
@@ -119,6 +162,7 @@ class DepenseIndex extends Component
             'montant' => $this->montant,
             'mode_paiement' => $this->modePaiement,
             'fk_id_fournisseur' => $this->fkIdFournisseur,
+            'fk_id_employe' => $this->fkIdEmploye,
             'reference' => $this->reference ?: null,
             'notes' => $this->notes ?: null,
             'statut' => 'validee',
@@ -140,7 +184,7 @@ class DepenseIndex extends Component
     public function fermerForm(): void
     {
         $this->afficherForm = false;
-        $this->reset(['designation', 'montant', 'fkIdTypeDepense', 'fkIdFournisseur', 'reference', 'notes', 'editId']);
+        $this->reset(['designation', 'montant', 'fkIdTypeDepense', 'fkIdFournisseur', 'fkIdEmploye', 'reference', 'notes', 'editId']);
         $this->dateDepense = now()->toDateString();
         $this->modePaiement = 'especes';
         $this->resetErrorBag();
@@ -184,14 +228,14 @@ class DepenseIndex extends Component
             ->when($this->filtreType, fn ($q) => $q->where('fk_id_type_depense', $this->filtreType))
             ->when($this->filtreCategorie === 'employes', function ($q) {
                 $q->where(function ($query) {
-                    $query->whereHas('typeDepense', fn ($typeQuery) => $typeQuery->where('libelle', 'Salaires'))
+                    $query->whereHas('typeDepense', fn ($typeQuery) => $typeQuery->where('libelle', self::TYPE_SALAIRES_LABEL))
                         ->orWhere('reference', 'like', 'AVANCE-%')
                         ->orWhere('reference', 'like', 'PAIE-%');
                 });
             })
             ->when($this->filtreCategorie === 'ordinaires', function ($q) {
                 $q->where(function ($query) {
-                    $query->whereDoesntHave('typeDepense', fn ($typeQuery) => $typeQuery->where('libelle', 'Salaires'))
+                    $query->whereDoesntHave('typeDepense', fn ($typeQuery) => $typeQuery->where('libelle', self::TYPE_SALAIRES_LABEL))
                         ->where(function ($refQuery) {
                             $refQuery->whereNull('reference')
                                 ->orWhere(function ($notEmpRefQuery) {
@@ -208,17 +252,21 @@ class DepenseIndex extends Component
     private function ensureTypeSalairesActif(): void
     {
         TypeDepense::updateOrCreate(
-            ['libelle' => 'Salaires'],
+            ['libelle' => self::TYPE_SALAIRES_LABEL],
             ['icone' => '👥', 'couleur' => '#10B981', 'actif' => true, 'ordre' => 1]
         );
     }
 
     public function render()
     {
+        $types = TypeDepense::actif()->get();
+
         return view('livewire.depenses.depense-index', [
-            'depenses' => $this->buildQuery()->with(['typeDepense', 'fournisseur'])->paginate(20),
-            'types' => TypeDepense::actif()->get(),
+            'depenses' => $this->buildQuery()->with(['typeDepense', 'fournisseur', 'employe'])->paginate(20),
+            'types' => $types,
+            'typesSaisie' => $types->filter(fn (TypeDepense $type): bool => $type->libelle !== self::TYPE_SALAIRES_LABEL)->values(),
             'fournisseurs' => Fournisseur::actif()->get(),
+            'employes' => Employe::actif()->get(),
             'modes' => ModePaiement::actif()->get(),
             'totalPeriode' => $this->total_periode,
         ])->layout('layouts.app');

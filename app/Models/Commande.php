@@ -83,6 +83,11 @@ class Commande extends Model
         return $this->belongsTo(Succursale::class, 'fk_id_succursale');
     }
 
+    public function pointTransactions(): HasMany
+    {
+        return $this->hasMany(ClientPointTransaction::class, 'fk_id_commande');
+    }
+
     public function scopeForCurrentSuccursale(Builder $query): Builder
     {
         return SuccursaleContext::apply($query);

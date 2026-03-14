@@ -11,13 +11,14 @@
     </div>
 
     <div class="card card-body mb-4">
-        <input wire:model.live.debounce.500ms="recherche" type="text" placeholder="ابحث بالاسم أو رقم الهاتف" class="form-field md:max-w-md">
+        <input wire:model.live.debounce.500ms="recherche" type="text" placeholder="ابحث برمز الزبون أو الاسم أو رقم الهاتف" class="form-field md:max-w-md">
     </div>
 
     <div class="table-wrap">
         <table class="table-base">
             <thead class="table-head">
                 <tr>
+                    <th class="table-th">الرمز</th>
                     <th class="table-th">الاسم</th>
                     <th class="table-th">الهاتف</th>
                     <th class="table-th">إجمالي الدين</th>
@@ -27,6 +28,7 @@
             <tbody>
                 @forelse($clients as $client)
                     <tr class="table-row">
+                        <td class="table-td"><span class="num-ltr">{{ $client->code_client ?? '-' }}</span></td>
                         <td class="table-td">{{ $client->full_name }}</td>
                         <td class="table-td">{{ $client->telephone }}</td>
                         <td class="table-td text-amber-700 font-semibold">{{ number_format((float) ($client->total_dette ?? 0), 2) }} MRU</td>
@@ -47,7 +49,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="4" class="table-td text-center text-gray-500">لا يوجد زبناء مدينون.</td></tr>
+                    <tr><td colspan="5" class="table-td text-center text-gray-500">لا يوجد زبناء مدينون.</td></tr>
                 @endforelse
             </tbody>
         </table>

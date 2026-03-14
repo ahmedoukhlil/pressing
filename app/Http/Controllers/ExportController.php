@@ -105,7 +105,8 @@ class ExportController extends Controller
     {
         $commandes = Commande::query()
             ->forCurrentSuccursale()
-            ->with(['client', 'details.service'])
+            ->with('client')
+            ->withSum('details as total_pieces', 'quantite')
             ->where('statut', 'en_cours')
             ->orderByDesc('date_depot')
             ->get();

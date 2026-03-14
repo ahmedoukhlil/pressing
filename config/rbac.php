@@ -1,0 +1,66 @@
+<?php
+
+return [
+    'sidebar_view_permissions' => [
+        'view.dashboard',
+        'view.pos',
+        'view.recherche',
+        'view.clients.index',
+        'view.depenses.index',
+        'view.finances.recettes-depenses',
+        'view.services.index',
+        'view.parametrage.parametres-generaux',
+        'view.parametrage.stock-consommables.index',
+        'view.parametrage.employes.index',
+        'view.parametrage.modes-paiement.index',
+        'view.parametrage.fournisseurs.index',
+        'view.parametrage.types-depenses.index',
+        'view.admin.succursales.index',
+        'view.admin.users.index',
+    ],
+
+    'permission_labels' => [
+        'view.dashboard' => 'عرض لوحة التحكم',
+        'view.pos' => 'الوصول إلى الإيداع',
+        'view.recherche' => 'الوصول إلى الطلبات',
+        'view.clients.index' => 'عرض لائحة الزبناء',
+        'view.clients.endettes' => 'عرض الزبناء المدينين',
+        'view.clients.form' => 'إضافة وتعديل الزبناء',
+        'view.clients.compte' => 'عرض حساب الزبون',
+        'view.services.index' => 'عرض الخدمات',
+        'view.services.form' => 'إضافة وتعديل الخدمات',
+        'view.depenses.index' => 'عرض المصروفات',
+        'view.finances.recettes-depenses' => 'عرض الإيرادات والمصروفات',
+
+        'view.parametrage.modes-paiement.index' => 'عرض طرق الدفع',
+        'view.parametrage.parametres-generaux' => 'عرض نظام نقاط الولاء',
+        'view.parametrage.stock-consommables.index' => 'عرض المخزون',
+        'view.parametrage.fournisseurs.index' => 'عرض الموردين',
+        'view.parametrage.types-depenses.index' => 'عرض أنواع المصروفات',
+        'view.parametrage.employes.index' => 'عرض الموظفين',
+        'view.parametrage.employes.form' => 'إضافة وتعديل الموظفين',
+        'view.parametrage.employes.avances' => 'عرض السلف والرواتب',
+
+        'view.admin.users.index' => 'عرض المستخدمين',
+        'view.admin.users.form' => 'إضافة وتعديل المستخدمين',
+        'view.admin.succursales.index' => 'عرض الفروع',
+        'view.admin.roles.index' => 'عرض الأدوار',
+        'view.admin.roles.form' => 'إضافة وتعديل الأدوار',
+
+        'view.commandes.ticket' => 'طباعة وصل الطلب',
+        'export.commandes.pdf' => 'تصدير الطلبات PDF',
+        'export.depenses.pdf' => 'تصدير المصروفات PDF',
+        'export.finances.details.pdf' => 'تصدير تفاصيل المالية PDF',
+        'export.finances.details.excel' => 'تصدير تفاصيل المالية Excel',
+        'export.stock.pdf' => 'تصدير المخزون PDF',
+        'succursales.switch' => 'تغيير الفرع النشط',
+
+        // Legacy permissions
+        'services.manage' => 'إدارة الخدمات',
+        'commandes.cancel' => 'إلغاء الطلبات',
+        'caisse.adjust' => 'تعديل الصندوق',
+        'users.manage' => 'إدارة المستخدمين',
+        'roles.manage' => 'إدارة الأدوار',
+        'parametrage.manage' => 'إدارة الإعدادات',
+    ],
+];

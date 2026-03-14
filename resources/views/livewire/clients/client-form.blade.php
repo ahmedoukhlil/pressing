@@ -13,6 +13,17 @@
     @endif
 
     <form wire:submit.prevent="sauvegarder" class="card card-body grid md:grid-cols-2 gap-3">
+        @if($clientId)
+            <div>
+                <label class="form-label">رمز الزبون</label>
+                <input type="text" value="{{ $codeClient }}" class="form-field bg-slate-50" readonly>
+            </div>
+        @else
+            <div>
+                <label class="form-label">رمز الزبون</label>
+                <input type="text" value="يتم توليده تلقائيًا بعد الحفظ" class="form-field bg-slate-50 text-slate-500" readonly>
+            </div>
+        @endif
         <div>
             <label class="form-label">الاسم <span class="text-red-500">*</span></label>
             <input wire:model.live="nom" type="text" placeholder="الاسم" class="form-field">

@@ -63,7 +63,7 @@
                 <label class="block text-sm font-medium mb-1">نوع المصروف *</label>
                 <select wire:model.live="fkIdTypeDepense" class="w-full rounded border-gray-300">
                     <option value="">اختر...</option>
-                    @foreach($types as $type)
+                    @foreach($typesSaisie as $type)
                         <option value="{{ $type->id }}">{{ $type->libelle }}</option>
                     @endforeach
                 </select>
@@ -92,16 +92,33 @@
                 @error('modePaiement') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
             </div>
 
-            <div>
-                <label class="block text-sm font-medium mb-1">المورد</label>
-                <select wire:model.live="fkIdFournisseur" class="w-full rounded border-gray-300">
-                    <option value="">بدون مورد</option>
-                    @foreach($fournisseurs as $f)
-                        <option value="{{ $f->id }}">{{ $f->nom }}</option>
-                    @endforeach
-                </select>
-                @error('fkIdFournisseur') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-            </div>
+            @php
+                $typeSelectionne = collect($types)->firstWhere('id', (int) $fkIdTypeDepense);
+                $estTransportSelectionne = $typeSelectionne?->libelle === 'النقل';
+            @endphp
+            @if($estTransportSelectionne)
+                <div>
+                    <label class="block text-sm font-medium mb-1">الموظف</label>
+                    <select wire:model.live="fkIdEmploye" class="w-full rounded border-gray-300">
+                        <option value="">اختر الموظف...</option>
+                        @foreach($employes as $employe)
+                            <option value="{{ $employe->id }}">{{ $employe->full_name }}</option>
+                        @endforeach
+                    </select>
+                    @error('fkIdEmploye') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                </div>
+            @else
+                <div>
+                    <label class="block text-sm font-medium mb-1">المورد</label>
+                    <select wire:model.live="fkIdFournisseur" class="w-full rounded border-gray-300">
+                        <option value="">بدون مورد</option>
+                        @foreach($fournisseurs as $f)
+                            <option value="{{ $f->id }}">{{ $f->nom }}</option>
+                        @endforeach
+                    </select>
+                    @error('fkIdFournisseur') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                </div>
+            @endif
 
             <div>
                 <label class="block text-sm font-medium mb-1">المرجع</label>
@@ -127,6 +144,7 @@
                     <th class="table-th"><button wire:click="sortBy('date_depense')" class="font-medium">التاريخ</button></th>
                     <th class="table-th"><button wire:click="sortBy('fk_id_type_depense')" class="font-medium">النوع</button></th>
                     <th class="table-th"><button wire:click="sortBy('designation')" class="font-medium">الوصف</button></th>
+                    <th class="table-th">الموظف</th>
                     <th class="table-th">التصنيف</th>
                     <th class="table-th"><button wire:click="sortBy('montant')" class="font-medium">المبلغ</button></th>
                     <th class="table-th"></th>
@@ -135,7 +153,7 @@
             <tbody>
                 @forelse($depenses as $depense)
                     @php
-                        $estDepenseEmploye = ($depense->typeDepense?->libelle === 'Salaires')
+                        $estDepenseEmploye = ($depense->typeDepense?->libelle === 'الرواتب')
                             || str_starts_with((string) $depense->reference, 'AVANCE-')
                             || str_starts_with((string) $depense->reference, 'PAIE-');
                     @endphp
@@ -143,6 +161,7 @@
                         <td class="table-td">{{ $depense->date_depense?->format('d/m/Y') }}</td>
                         <td class="table-td">{{ $depense->typeDepense?->libelle }}</td>
                         <td class="table-td">{{ $depense->designation }}</td>
+                        <td class="table-td">{{ $depense->employe?->full_name ?? '-' }}</td>
                         <td class="table-td">
                             <span class="status-badge {{ $estDepenseEmploye ? 'status-warning' : 'status-neutral' }}">
                                 {{ $estDepenseEmploye ? 'موظفين' : 'عادي' }}
@@ -165,7 +184,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="table-td text-center text-gray-500">لا توجد مصروفات.</td></tr>
+                    <tr><td colspan="7" class="table-td text-center text-gray-500">لا توجد مصروفات.</td></tr>
                 @endforelse
             </tbody>
         </table>

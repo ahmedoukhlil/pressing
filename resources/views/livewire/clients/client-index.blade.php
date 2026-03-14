@@ -11,13 +11,14 @@
     </div>
 
     <div class="card card-body mb-4">
-        <input wire:model.live.debounce.500ms="recherche" type="text" placeholder="ابحث بالاسم أو رقم الهاتف" class="form-field md:max-w-md">
+        <input wire:model.live.debounce.500ms="recherche" type="text" placeholder="ابحث برمز الزبون أو الاسم أو رقم الهاتف" class="form-field md:max-w-md">
     </div>
 
     <div class="table-wrap">
         <table class="table-base">
             <thead class="table-head">
                 <tr>
+                    <th class="table-th"><button wire:click="sortBy('code_client')" class="font-medium">الرمز</button></th>
                     <th class="table-th"><button wire:click="sortBy('nom')" class="font-medium">الاسم</button></th>
                     <th class="table-th"><button wire:click="sortBy('telephone')" class="font-medium">الهاتف</button></th>
                     <th class="table-th text-right">الإجراءات</th>
@@ -26,6 +27,7 @@
             <tbody>
                 @forelse($clients as $client)
                     <tr class="table-row">
+                        <td class="table-td"><span class="num-ltr">{{ $client->code_client ?? '-' }}</span></td>
                         <td class="table-td">{{ $client->full_name }}</td>
                         <td class="table-td">{{ $client->telephone }}</td>
                         <td class="table-td text-right">
@@ -45,7 +47,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="3" class="table-td text-center text-gray-500">لا يوجد زبناء.</td></tr>
+                    <tr><td colspan="4" class="table-td text-center text-gray-500">لا يوجد زبناء.</td></tr>
                 @endforelse
             </tbody>
         </table>

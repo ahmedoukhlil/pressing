@@ -9,22 +9,29 @@
         .line { border-top: 1px dashed #777; margin: 8px 0; }
         .row { display: flex; justify-content: space-between; gap: 8px; }
         .muted { color: #555; font-size: 11px; }
-        .title { text-align: center; margin: 6px 0; }
+        .title { text-align: center; margin: 6px 0 2px; font-size: 16px; }
+        .subtitle { text-align: center; margin: 0 0 6px; font-size: 18px; font-weight: 700; letter-spacing: .4px; }
+        .center { text-align: center; margin: 2px 0; }
         .totals p { margin: 4px 0; }
         .num-ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
     </style>
 </head>
 <body onload="window.print()">
-<h3 class="title">{{ $settings['nom_pressing'] ?? config('app.name') }}</h3>
-@if(!empty($settings['adresse_pressing']))
-    <p class="muted">{{ $settings['adresse_pressing'] }}</p>
-@endif
-@if(!empty($settings['telephone_pressing']))
-    <p class="muted">الهاتف: {{ $settings['telephone_pressing'] }}</p>
-@endif
+@php
+    $nomPressing = $settings['nom_pressing'] ?? 'مغاسل للنظيف';
+    $nomPressingLatin = 'PRESSINGS ENNADIF';
+    $telephonePressing = $settings['telephone_pressing'] ?? '32 77 04 04 - 32 77 05 05';
+    $adressePressing = $settings['adresse_pressing'] ?? 'TEYARETT - Noakchott - Mauritanie';
+@endphp
+
+<h3 class="title">{{ $nomPressing }}</h3>
+<p class="subtitle">{{ $nomPressingLatin }}</p>
+<p class="muted center">تلف: <span class="num-ltr">{{ $telephonePressing }}</span> : Tél</p>
+<p class="muted center">{{ $adressePressing }}</p>
 <p class="row"><strong>الطلب</strong><span>{{ $commande->numero_commande }}</span></p>
 <p class="row"><strong>تاريخ الإيداع</strong><span>{{ $commande->date_depot?->format('d/m/Y H:i') }}</span></p>
 <p><strong>الزبون:</strong> {{ $commande->client?->full_name }} ({{ $commande->client?->telephone }})</p>
+<p><strong>رمز الزبون:</strong> <span class="num-ltr">{{ $commande->client?->code_client ?? '-' }}</span></p>
 <div class="line"></div>
 @foreach($commande->details as $detail)
     <div class="row">

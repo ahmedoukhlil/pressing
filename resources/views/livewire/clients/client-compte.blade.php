@@ -2,7 +2,7 @@
     <div class="page-header">
         <div>
             <h1 class="page-title">حساب الزبون</h1>
-            <p class="page-subtitle">{{ $client->full_name }} | {{ $client->telephone }}</p>
+            <p class="page-subtitle"><span class="num-ltr">{{ $client->code_client ?? '-' }}</span> | {{ $client->full_name }} | {{ $client->telephone }}</p>
         </div>
         <a href="{{ route('clients.index') }}" wire:navigate class="btn-secondary">الرجوع إلى الزبناء</a>
     </div>
@@ -27,6 +27,62 @@
             </div>
         </div>
     </div>
+
+    @if(($loyaltySettings['enabled'] ?? false))
+        <div class="card card-body mb-5">
+            <h2 class="card-title">برنامج نقاط الولاء</h2>
+            <div class="grid gap-3 text-sm md:grid-cols-4">
+                <div>
+                    <p class="text-slate-500">الرصيد الحالي</p>
+                    <p class="font-semibold text-amber-700 num-ltr">{{ number_format((int) ($wallet?->solde_points ?? 0)) }} نقطة</p>
+                </div>
+                <div>
+                    <p class="text-slate-500">إجمالي النقاط المكتسبة</p>
+                    <p class="font-semibold text-emerald-700 num-ltr">{{ number_format((int) ($wallet?->total_points_gagnes ?? 0)) }} نقطة</p>
+                </div>
+                <div>
+                    <p class="text-slate-500">إجمالي النقاط المستخدمة</p>
+                    <p class="font-semibold text-purple-700 num-ltr">{{ number_format((int) ($wallet?->total_points_utilises ?? 0)) }} نقطة</p>
+                </div>
+                <div>
+                    <p class="text-slate-500">قيمة النقطة للخصم</p>
+                    <p class="font-semibold text-slate-900 num-ltr">1 = {{ number_format((float) ($loyaltySettings['mru_discount_per_point'] ?? 0), 2) }} MRU</p>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <h3 class="text-sm font-semibold text-slate-800 mb-2">آخر حركات النقاط</h3>
+                @forelse($pointTransactions as $tx)
+                    <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 mb-2 last:mb-0">
+                        <div>
+                            <p class="text-sm font-medium text-slate-800">
+                                @if($tx->type === 'gain')
+                                    كسب نقاط
+                                @elseif($tx->type === 'utilisation')
+                                    استخدام نقاط
+                                @else
+                                    حركة نقاط
+                                @endif
+                                @if($tx->commande?->numero_commande)
+                                    <span class="text-slate-500">- {{ $tx->commande->numero_commande }}</span>
+                                @endif
+                            </p>
+                            <p class="text-xs text-slate-500">{{ optional($tx->created_at)->format('d/m/Y H:i') }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-semibold num-ltr {{ $tx->type === 'gain' ? 'text-emerald-700' : 'text-purple-700' }}">
+                                {{ $tx->type === 'gain' ? '+' : '-' }}{{ number_format((int) $tx->points) }} نقطة
+                            </p>
+                            <p class="text-xs text-slate-500 num-ltr">{{ number_format((float) $tx->valeur_mru, 2) }} MRU</p>
+                        </div>
+                    </div>
+                @empty
+                    <div class="empty-state">لا توجد حركات نقاط بعد.</div>
+                @endforelse
+                <div class="mt-3">{{ $pointTransactions->links() }}</div>
+            </div>
+        </div>
+    @endif
 
     <div class="card card-body">
         <h2 class="card-title">لائحة الطلبات</h2>

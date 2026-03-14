@@ -17,6 +17,7 @@ class Depense extends Model
         'montant',
         'mode_paiement',
         'fk_id_fournisseur',
+        'fk_id_employe',
         'reference',
         'statut',
         'notes',
@@ -45,6 +46,11 @@ class Depense extends Model
     public function fournisseur(): BelongsTo
     {
         return $this->belongsTo(Fournisseur::class, 'fk_id_fournisseur');
+    }
+
+    public function employe(): BelongsTo
+    {
+        return $this->belongsTo(Employe::class, 'fk_id_employe');
     }
 
     public function user(): BelongsTo

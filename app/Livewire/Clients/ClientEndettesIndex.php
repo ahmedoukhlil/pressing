@@ -86,7 +86,8 @@ class ClientEndettesIndex extends Component
             )
             ->when($this->recherche, fn ($q) => $q
                 ->where(fn ($sub) => $sub
-                    ->where('nom', 'like', "%{$this->recherche}%")
+                    ->where('code_client', 'like', "%{$this->recherche}%")
+                    ->orWhere('nom', 'like', "%{$this->recherche}%")
                     ->orWhere('prenom', 'like', "%{$this->recherche}%")
                     ->orWhere('telephone', 'like', "%{$this->recherche}%")))
             ->orderByDesc('total_dette')

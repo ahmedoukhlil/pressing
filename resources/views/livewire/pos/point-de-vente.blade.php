@@ -21,6 +21,13 @@
                     <i class="fi fi-rr-cross-small text-sm"></i>
                 </button>
             </div>
+            @if($this->loyalty_settings['enabled'])
+                <div class="flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs text-amber-800">
+                    <i class="fi fi-rr-star text-[11px]"></i>
+                    <span>النقاط:</span>
+                    <span class="font-bold num-ltr">{{ number_format((int) $soldePointsClient) }}</span>
+                </div>
+            @endif
         @else
             <div class="relative flex-1 max-w-sm">
                 <input
@@ -202,6 +209,24 @@
                     الدفع اختياري. اتركه 0 للتسجيل بدون دفع.
                 </div>
 
+                @if($this->loyalty_settings['enabled'])
+                    <div class="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 space-y-2">
+                        <div class="flex items-center justify-between text-xs text-amber-800">
+                            <span>رصيد النقاط الحالي</span>
+                            <span class="font-bold num-ltr">{{ number_format((int) $soldePointsClient) }}</span>
+                        </div>
+                        <div>
+                            <label class="form-label !mb-1 text-amber-900">النقاط المراد استخدامها</label>
+                            <input type="number" min="0" step="1" wire:model.live="pointsAUtiliser" class="form-field font-bold">
+                            <p class="mt-1 text-[11px] text-amber-700">
+                                الخصم بالنقاط:
+                                <span class="font-semibold num-ltr">{{ number_format((float) $this->remise_points_montant, 0) }} MRU</span>
+                            </p>
+                            @error('pointsAUtiliser') <div class="form-error">{{ $message }}</div> @enderror
+                        </div>
+                    </div>
+                @endif
+
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="form-label">المبلغ المدفوع</label>
@@ -214,7 +239,7 @@
                             <option value="especes">نقدًا</option>
                             <option value="carte">بطاقة</option>
                             <option value="virement">تحويل</option>
-                            <option value="non_paye" @disabled($montantPaye > 0)>غير مدفوع</option>
+                            <option value="non_paye" @disabled((float) $montantPaye > 0)>غير مدفوع</option>
                         </select>
                         @error('modeReglement') <div class="form-error">{{ $message }}</div> @enderror
                     </div>
@@ -255,12 +280,23 @@
                     </div>
                     <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-2.5">
                         <div class="text-[10px] text-emerald-600">الإجمالي</div>
-                        <div class="font-bold text-emerald-800 num-ltr">{{ number_format((float) $this->montant_total_net, 2, ',', ' ') }} MRU</div>
+                        <div class="font-bold text-emerald-800 num-ltr">{{ number_format((float) $this->montant_total_apres_points, 2, ',', ' ') }} MRU</div>
                     </div>
                     <div class="rounded-lg border border-blue-200 bg-blue-50 p-2.5">
                         <div class="text-[10px] text-blue-600">المدفوع</div>
-                        <div class="font-bold text-blue-800 num-ltr">{{ number_format((float) $montantPaye, 2, ',', ' ') }} MRU</div>
+                        <div class="font-bold text-blue-800 num-ltr">{{ number_format((float) $montantPaye, 0) }} MRU</div>
                     </div>
+                    @if((int) $this->points_a_utiliser_normalises > 0)
+                        <div class="rounded-lg border border-purple-200 bg-purple-50 p-2.5 col-span-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] text-purple-700">نقاط مستعملة</span>
+                                <span class="font-bold text-purple-800 num-ltr">
+                                    {{ number_format((int) $this->points_a_utiliser_normalises) }} نقطة
+                                    ({{ number_format((float) $this->remise_points_montant, 0) }} MRU)
+                                </span>
+                            </div>
+                        </div>
+                    @endif
                     <div class="rounded-lg border border-amber-200 bg-amber-50 p-2.5 col-span-2">
                         <div class="flex justify-between items-center">
                             <span class="text-[10px] text-amber-700">المتبقي</span>

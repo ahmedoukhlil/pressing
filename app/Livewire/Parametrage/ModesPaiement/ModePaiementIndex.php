@@ -3,7 +3,7 @@
 namespace App\Livewire\Parametrage\ModesPaiement;
 
 use App\Models\ModePaiement;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 use Livewire\Component;
 
 class ModePaiementIndex extends Component
@@ -12,7 +12,6 @@ class ModePaiementIndex extends Component
     public ?int $editId = null;
 
     public string $libelle = '';
-    public string $code = '';
     public string $icone = '';
     public int $ordre = 0;
     public bool $actif = true;
@@ -21,7 +20,7 @@ class ModePaiementIndex extends Component
 
     public function nouveauMode(): void
     {
-        $this->reset(['libelle', 'code', 'icone', 'ordre', 'editId']);
+        $this->reset(['libelle', 'icone', 'ordre', 'editId']);
         $this->actif = true;
         $this->afficherForm = true;
     }
@@ -31,7 +30,6 @@ class ModePaiementIndex extends Component
         $mode = ModePaiement::findOrFail($id);
         $this->editId = $mode->id;
         $this->libelle = $mode->libelle;
-        $this->code = $mode->code;
         $this->icone = $mode->icone ?? '';
         $this->ordre = $mode->ordre;
         $this->actif = $mode->actif;
@@ -42,13 +40,11 @@ class ModePaiementIndex extends Component
     {
         $this->validate([
             'libelle' => ['required', 'string', 'max:100'],
-            'code' => ['required', 'string', 'max:30', Rule::unique('modes_paiement', 'code')->ignore($this->editId)],
             'ordre' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $data = [
             'libelle' => $this->libelle,
-            'code' => strtolower($this->code),
             'icone' => $this->icone ?: null,
             'ordre' => $this->ordre,
             'actif' => $this->actif,
@@ -56,18 +52,19 @@ class ModePaiementIndex extends Component
 
         if ($this->editId) {
             $mode = ModePaiement::findOrFail($this->editId);
-            if ($mode->est_systeme) {
-                $data['code'] = $mode->code;
-            }
+            // Ne jamais modifier le code interne d'une methode existante
+            // pour preserver les references historiques.
+            $data['code'] = $mode->code;
             $mode->update($data);
             $this->dispatch('notify', type: 'success', message: 'تم تحديث طريقة الدفع.');
         } else {
+            $data['code'] = $this->buildUniqueCodeFromLibelle($this->libelle);
             ModePaiement::create($data);
             $this->dispatch('notify', type: 'success', message: 'تم إنشاء طريقة الدفع.');
         }
 
         $this->afficherForm = false;
-        $this->reset(['libelle', 'code', 'icone', 'ordre', 'editId']);
+        $this->reset(['libelle', 'icone', 'ordre', 'editId']);
     }
 
     public function demanderToggleActif(int $id): void
@@ -130,5 +127,22 @@ class ModePaiementIndex extends Component
         return view('livewire.parametrage.modes-paiement.mode-paiement-index', [
             'modes' => ModePaiement::query()->orderBy('ordre')->get(),
         ])->layout('layouts.app');
+    }
+
+    private function buildUniqueCodeFromLibelle(string $libelle): string
+    {
+        $base = Str::slug($libelle, '_');
+        if ($base === '') {
+            $base = 'mode_paiement';
+        }
+
+        $candidate = strtolower($base);
+        $suffix = 2;
+        while (ModePaiement::query()->where('code', $candidate)->exists()) {
+            $candidate = strtolower($base . '_' . $suffix);
+            $suffix++;
+        }
+
+        return $candidate;
     }
 }

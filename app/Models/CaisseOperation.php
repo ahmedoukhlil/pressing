@@ -6,6 +6,7 @@ use App\Support\SuccursaleContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CaisseOperation extends Model
 {
@@ -56,6 +57,11 @@ class CaisseOperation extends Model
     public function succursale(): BelongsTo
     {
         return $this->belongsTo(Succursale::class, 'fk_id_succursale');
+    }
+
+    public function pointTransactions(): HasMany
+    {
+        return $this->hasMany(ClientPointTransaction::class, 'fk_id_caisse_operation');
     }
 
     public function scopeForCurrentSuccursale(Builder $query): Builder

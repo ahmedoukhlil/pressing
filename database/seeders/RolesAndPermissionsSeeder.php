@@ -18,6 +18,46 @@ class RolesAndPermissionsSeeder extends Seeder
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $permissions = [
+            // Vues principales
+            'view.dashboard',
+            'view.pos',
+            'view.recherche',
+            'view.clients.index',
+            'view.clients.endettes',
+            'view.clients.form',
+            'view.clients.compte',
+            'view.services.index',
+            'view.services.form',
+            'view.depenses.index',
+            'view.finances.recettes-depenses',
+
+            // Vues parametrage
+            'view.parametrage.modes-paiement.index',
+            'view.parametrage.parametres-generaux',
+            'view.parametrage.stock-consommables.index',
+            'view.parametrage.fournisseurs.index',
+            'view.parametrage.types-depenses.index',
+            'view.parametrage.employes.index',
+            'view.parametrage.employes.form',
+            'view.parametrage.employes.avances',
+
+            // Vues admin
+            'view.admin.users.index',
+            'view.admin.users.form',
+            'view.admin.succursales.index',
+            'view.admin.roles.index',
+            'view.admin.roles.form',
+
+            // Actions et exports
+            'view.commandes.ticket',
+            'export.commandes.pdf',
+            'export.depenses.pdf',
+            'export.finances.details.pdf',
+            'export.finances.details.excel',
+            'export.stock.pdf',
+            'succursales.switch',
+
+            // Compatibilite permissions existantes
             'services.manage',
             'commandes.cancel',
             'caisse.adjust',
@@ -33,7 +73,20 @@ class RolesAndPermissionsSeeder extends Seeder
         $caissier = Role::findOrCreate('caissier', 'web');
         $gerant = Role::findOrCreate('gerant', 'web');
 
-        $caissier->syncPermissions([]);
+        $caissier->syncPermissions([
+            'view.dashboard',
+            'view.pos',
+            'view.recherche',
+            'view.clients.index',
+            'view.clients.compte',
+            'view.depenses.index',
+            'view.finances.recettes-depenses',
+            'view.commandes.ticket',
+            'export.commandes.pdf',
+            'export.depenses.pdf',
+            'export.finances.details.pdf',
+            'export.finances.details.excel',
+        ]);
         $gerant->syncPermissions($permissions);
 
         $admin = User::firstOrCreate(

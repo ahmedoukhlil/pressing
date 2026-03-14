@@ -17,55 +17,38 @@
         th, td { border: 1px solid #d1d5db; padding: 6px; text-align: right; }
         th { background: #f3f4f6; }
         .num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
-        .commande { border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px; margin-bottom: 12px; }
-        .commande-head { margin-bottom: 6px; line-height: 1.7; }
-        .small { font-size: 11px; color: #4b5563; }
     </style>
 </head>
 <body>
     <h2>تقرير الطلبات قيد المعالجة</h2>
     <div class="meta">تاريخ التوليد: {{ $generatedAt->format('Y-m-d H:i') }}</div>
 
-    @forelse($commandes as $commande)
-        <div class="commande">
-            <div class="commande-head">
-                <div><strong>رقم الطلب:</strong> {{ $commande->numero_commande }}</div>
-                <div><strong>الزبون:</strong> {{ $commande->client?->full_name ?: '-' }} | <strong>الهاتف:</strong> {{ $commande->client?->telephone ?: '-' }}</div>
-                <div class="small">
-                    تاريخ الإيداع: {{ $commande->date_depot?->format('Y-m-d H:i') }}
-                </div>
-            </div>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>الخدمة</th>
-                        <th>الكمية</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($commande->details as $detail)
-                        <tr>
-                            <td>{{ $detail->service?->libelle_ar ?: '-' }}</td>
-                            <td><span class="num">{{ (int) $detail->quantite }}</span></td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="2">لا توجد تفاصيل لهذه الطلبية.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    @empty
-        <table>
-            <tbody>
+    <table>
+        <thead>
+            <tr>
+                <th>اسم الزبون</th>
+                <th>رمز الزبون</th>
+                <th>رقم الهاتف</th>
+                <th>رقم الطلب</th>
+                <th>إجمالي القطع</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($commandes as $commande)
                 <tr>
-                    <td>لا توجد بيانات.</td>
+                    <td>{{ $commande->client?->full_name ?: '-' }}</td>
+                    <td><span class="num">{{ $commande->client?->code_client ?: '-' }}</span></td>
+                    <td><span class="num">{{ $commande->client?->telephone ?: '-' }}</span></td>
+                    <td><span class="num">{{ $commande->numero_commande }}</span></td>
+                    <td><span class="num">{{ (int) ($commande->total_pieces ?? 0) }}</span></td>
                 </tr>
-            </tbody>
-        </table>
-    @endforelse
+            @empty
+                <tr>
+                    <td colspan="5">لا توجد بيانات.</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
 </body>
 </html>
 

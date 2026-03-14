@@ -22,6 +22,7 @@ use App\Livewire\Parametrage\Employes\EmployeForm;
 use App\Livewire\Parametrage\Employes\EmployeIndex;
 use App\Livewire\Parametrage\Fournisseurs\FournisseurIndex;
 use App\Livewire\Parametrage\ModesPaiement\ModePaiementIndex;
+use App\Livewire\Parametrage\ParametresGeneraux;
 use App\Livewire\Parametrage\Stock\ConsommableIndex;
 use App\Livewire\Parametrage\TypesDepenses\TypeDepenseIndex;
 use App\Livewire\Services\ServiceForm;
@@ -33,7 +34,7 @@ Route::redirect('/', '/dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::post('/succursale-active', function () {
-        abort_unless(auth()->user()?->hasRole('gerant'), 403);
+        abort_unless(auth()->user()?->can('succursales.switch'), 403);
 
         $validated = request()->validate([
             'succursale_id' => ['nullable', 'integer', 'exists:succursales,id'],
@@ -48,49 +49,49 @@ Route::middleware('auth')->group(function () {
         return back();
     })->name('succursales.active');
 
-    Route::get('/dashboard', Dashboard::class)->name('dashboard');
+    Route::get('/dashboard', Dashboard::class)->middleware('permission:view.dashboard')->name('dashboard');
 
-    Route::get('/pos', PointDeVente::class)->name('pos');
-    Route::get('/recherche', RechercheCommande::class)->name('recherche');
+    Route::get('/pos', PointDeVente::class)->middleware('permission:view.pos')->name('pos');
+    Route::get('/recherche', RechercheCommande::class)->middleware('permission:view.recherche')->name('recherche');
 
-    Route::get('/clients', ClientIndex::class)->name('clients.index');
-    Route::get('/clients/endettes', ClientEndettesIndex::class)->name('clients.endettes');
-    Route::get('/clients/nouveau', ClientForm::class)->name('clients.create');
-    Route::get('/clients/{id}/compte', ClientCompte::class)->name('clients.compte');
-    Route::get('/clients/{id}', ClientForm::class)->name('clients.edit');
+    Route::get('/clients', ClientIndex::class)->middleware('permission:view.clients.index')->name('clients.index');
+    Route::get('/clients/endettes', ClientEndettesIndex::class)->middleware('permission:view.clients.index')->name('clients.endettes');
+    Route::get('/clients/nouveau', ClientForm::class)->middleware('permission:view.clients.index')->name('clients.create');
+    Route::get('/clients/{id}/compte', ClientCompte::class)->middleware('permission:view.clients.index')->name('clients.compte');
+    Route::get('/clients/{id}', ClientForm::class)->middleware('permission:view.clients.index')->name('clients.edit');
 
-    Route::get('/services', ServiceIndex::class)->name('services.index');
-    Route::get('/services/nouveau', ServiceForm::class)->name('services.create');
-    Route::get('/services/{id}', ServiceForm::class)->name('services.edit');
+    Route::get('/services', ServiceIndex::class)->middleware('permission:view.services.index')->name('services.index');
+    Route::get('/services/nouveau', ServiceForm::class)->middleware('permission:view.services.index')->name('services.create');
+    Route::get('/services/{id}', ServiceForm::class)->middleware('permission:view.services.index')->name('services.edit');
 
-    Route::get('/depenses', DepenseIndex::class)->name('depenses.index');
-    Route::get('/finances/recettes-depenses', RecettesDepenses::class)->name('finances.recettes-depenses');
-    Route::get('/commandes/{commande}/ticket', [CommandeController::class, 'ticket'])->name('commandes.ticket');
-    Route::get('/exports/commandes.pdf', [ExportController::class, 'commandesPdf'])->name('exports.commandes.pdf');
-    Route::get('/exports/depenses.pdf', [ExportController::class, 'depensesPdf'])->name('exports.depenses.pdf');
-    Route::get('/exports/finances/details.pdf', [ExportController::class, 'financesDetailsPdf'])->name('exports.finances.details.pdf');
-    Route::get('/exports/finances/details.excel', [ExportController::class, 'financesDetailsExcel'])->name('exports.finances.details.excel');
+    Route::get('/depenses', DepenseIndex::class)->middleware('permission:view.depenses.index')->name('depenses.index');
+    Route::get('/finances/recettes-depenses', RecettesDepenses::class)->middleware('permission:view.finances.recettes-depenses')->name('finances.recettes-depenses');
+    Route::get('/commandes/{commande}/ticket', [CommandeController::class, 'ticket'])->middleware('permission:view.commandes.ticket')->name('commandes.ticket');
+    Route::get('/exports/commandes.pdf', [ExportController::class, 'commandesPdf'])->middleware('permission:export.commandes.pdf')->name('exports.commandes.pdf');
+    Route::get('/exports/depenses.pdf', [ExportController::class, 'depensesPdf'])->middleware('permission:export.depenses.pdf')->name('exports.depenses.pdf');
+    Route::get('/exports/finances/details.pdf', [ExportController::class, 'financesDetailsPdf'])->middleware('permission:export.finances.details.pdf')->name('exports.finances.details.pdf');
+    Route::get('/exports/finances/details.excel', [ExportController::class, 'financesDetailsExcel'])->middleware('permission:export.finances.details.excel')->name('exports.finances.details.excel');
 
-    Route::middleware('role:gerant')->group(function () {
-        Route::get('/parametrage/modes-paiement', ModePaiementIndex::class)->name('parametrage.modes-paiement.index');
-        Route::get('/parametrage/stock-consommables', ConsommableIndex::class)->name('parametrage.stock-consommables.index');
-        Route::get('/exports/stock.pdf', [ExportController::class, 'stockPdf'])->name('exports.stock.pdf');
-        Route::get('/parametrage/fournisseurs', FournisseurIndex::class)->name('parametrage.fournisseurs.index');
-        Route::get('/parametrage/types-depenses', TypeDepenseIndex::class)->name('parametrage.types-depenses.index');
-        Route::get('/parametrage/employes', EmployeIndex::class)->name('parametrage.employes.index');
-        Route::get('/parametrage/employes/nouveau', EmployeForm::class)->name('parametrage.employes.create');
-        Route::get('/parametrage/employes/{id}/modifier', EmployeForm::class)->name('parametrage.employes.edit');
-        Route::get('/parametrage/employes/{employeId}/avances', AvanceSalaireIndex::class)->name('parametrage.employes.avances');
-        Route::get('/parametrage/employes/{employeId}/paiement-salaire', AvanceSalaireIndex::class)->name('parametrage.employes.paiement');
+    Route::get('/parametrage/modes-paiement', ModePaiementIndex::class)->middleware('permission:view.parametrage.modes-paiement.index')->name('parametrage.modes-paiement.index');
+    Route::redirect('/parametrage/parametres-generaux', '/parametrage/fidelite');
+    Route::get('/parametrage/fidelite', ParametresGeneraux::class)->middleware('permission:view.parametrage.parametres-generaux')->name('parametrage.fidelite');
+    Route::get('/parametrage/stock-consommables', ConsommableIndex::class)->middleware('permission:view.parametrage.stock-consommables.index')->name('parametrage.stock-consommables.index');
+    Route::get('/exports/stock.pdf', [ExportController::class, 'stockPdf'])->middleware('permission:export.stock.pdf')->name('exports.stock.pdf');
+    Route::get('/parametrage/fournisseurs', FournisseurIndex::class)->middleware('permission:view.parametrage.fournisseurs.index')->name('parametrage.fournisseurs.index');
+    Route::get('/parametrage/types-depenses', TypeDepenseIndex::class)->middleware('permission:view.parametrage.types-depenses.index')->name('parametrage.types-depenses.index');
+    Route::get('/parametrage/employes', EmployeIndex::class)->middleware('permission:view.parametrage.employes.index')->name('parametrage.employes.index');
+    Route::get('/parametrage/employes/nouveau', EmployeForm::class)->middleware('permission:view.parametrage.employes.index')->name('parametrage.employes.create');
+    Route::get('/parametrage/employes/{id}/modifier', EmployeForm::class)->middleware('permission:view.parametrage.employes.index')->name('parametrage.employes.edit');
+    Route::get('/parametrage/employes/{employeId}/avances', AvanceSalaireIndex::class)->middleware('permission:view.parametrage.employes.index')->name('parametrage.employes.avances');
+    Route::get('/parametrage/employes/{employeId}/paiement-salaire', AvanceSalaireIndex::class)->middleware('permission:view.parametrage.employes.index')->name('parametrage.employes.paiement');
 
-        Route::get('/admin/utilisateurs', UserIndex::class)->name('admin.users.index');
-        Route::get('/admin/utilisateurs/nouveau', UserForm::class)->name('admin.users.create');
-        Route::get('/admin/utilisateurs/{id}', UserForm::class)->name('admin.users.edit');
-        Route::get('/admin/succursales', SuccursaleIndex::class)->name('admin.succursales.index');
-        Route::get('/admin/roles', RoleIndex::class)->name('admin.roles.index');
-        Route::get('/admin/roles/nouveau', RoleForm::class)->name('admin.roles.create');
-        Route::get('/admin/roles/{id}', RoleForm::class)->name('admin.roles.edit');
-    });
+    Route::get('/admin/utilisateurs', UserIndex::class)->middleware('permission:view.admin.users.index')->name('admin.users.index');
+    Route::get('/admin/utilisateurs/nouveau', UserForm::class)->middleware('permission:view.admin.users.index')->name('admin.users.create');
+    Route::get('/admin/utilisateurs/{id}', UserForm::class)->middleware('permission:view.admin.users.index')->name('admin.users.edit');
+    Route::get('/admin/succursales', SuccursaleIndex::class)->middleware('permission:view.admin.succursales.index')->name('admin.succursales.index');
+    Route::get('/admin/roles', RoleIndex::class)->middleware('permission:view.admin.users.index')->name('admin.roles.index');
+    Route::get('/admin/roles/nouveau', RoleForm::class)->middleware('permission:view.admin.users.index')->name('admin.roles.create');
+    Route::get('/admin/roles/{id}', RoleForm::class)->middleware('permission:view.admin.users.index')->name('admin.roles.edit');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

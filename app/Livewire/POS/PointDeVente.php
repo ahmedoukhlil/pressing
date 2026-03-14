@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Commande;
 use App\Models\DetailCommande;
 use App\Models\Service;
+use App\Support\LoyaltyPointsService;
 use App\Support\SuccursaleContext;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -25,8 +26,10 @@ class PointDeVente extends Component
 
     public array $panier = [];
     public string $modeReglement = 'especes';
-    public float $montantPaye = 0;
+    public string $montantPaye = '0';
     public string $remisePourcentage = '0';
+    public string $pointsAUtiliser = '0';
+    public int $soldePointsClient = 0;
     public string $notes = '';
 
     public bool $afficherModalPaiement = false;
@@ -88,6 +91,7 @@ class PointDeVente extends Component
         $this->clientsTrouves = [];
         $this->afficherFormNouveauClient = false;
         $this->rechercheClient = $client->telephone;
+        $this->rafraichirSoldePointsClient();
     }
 
     public function creerNouveauClient(): void
@@ -134,6 +138,8 @@ class PointDeVente extends Component
         $this->clientInfo = null;
         $this->clientsTrouves = [];
         $this->rechercheClient = '';
+        $this->soldePointsClient = 0;
+        $this->pointsAUtiliser = '0';
         $this->resetFormClient();
     }
 
@@ -210,9 +216,39 @@ class PointDeVente extends Component
         return max(0, round($this->montant_total - $this->remise_montant, 2));
     }
 
+    public function getLoyaltySettingsProperty(): array
+    {
+        return LoyaltyPointsService::settings();
+    }
+
+    public function getPointsAUtiliserNormalisesProperty(): int
+    {
+        $settings = $this->loyalty_settings;
+        if (!$settings['enabled']) {
+            return 0;
+        }
+
+        $demandes = LoyaltyPointsService::normalizePointsInput($this->pointsAUtiliser);
+        $maxParMontant = LoyaltyPointsService::maxPointsForAmount($this->montant_total_net, $settings);
+        $maxUtilisable = min($this->soldePointsClient, $maxParMontant);
+
+        return max(0, min($demandes, $maxUtilisable));
+    }
+
+    public function getRemisePointsMontantProperty(): float
+    {
+        $settings = $this->loyalty_settings;
+        return LoyaltyPointsService::amountFromPoints($this->points_a_utiliser_normalises, $settings);
+    }
+
+    public function getMontantTotalApresPointsProperty(): float
+    {
+        return max(0, round($this->montant_total_net - $this->remise_points_montant, 2));
+    }
+
     public function getResteAPayerProperty(): float
     {
-        return max(0, round($this->montant_total_net - $this->montantPaye, 2));
+        return max(0, round($this->montant_total_apres_points - (float) $this->montantPaye, 2));
     }
 
     public function ouvrirModalPaiement(): void
@@ -227,10 +263,11 @@ class PointDeVente extends Component
             return;
         }
 
-        // Au depot, le paiement est optionnel : 0 = non paye, >0 = avance/total.
-        $this->montantPaye = 0;
+        $this->montantPaye = '0';
+        $this->pointsAUtiliser = '0';
         $this->modeReglement = 'non_paye';
         $this->remisePourcentage = (string) max(0, min(100, (float) $this->remisePourcentage));
+        $this->rafraichirSoldePointsClient();
         $this->afficherModalPaiement = true;
     }
 
@@ -248,6 +285,12 @@ class PointDeVente extends Component
         }
     }
 
+    public function updatedPointsAUtiliser($value): void
+    {
+        $this->pointsAUtiliser = (string) LoyaltyPointsService::normalizePointsInput($value);
+        $this->pointsAUtiliser = (string) $this->points_a_utiliser_normalises;
+    }
+
     public function validerCommande(): void
     {
         if (!$this->afficherModalConfirmation) {
@@ -257,8 +300,9 @@ class PointDeVente extends Component
         $this->validate([
             'clientSelectionneId' => ['required', 'exists:clients,id'],
             'modeReglement' => ['required', 'in:especes,carte,virement,non_paye'],
-            'montantPaye' => ['required', 'numeric', 'min:0', 'max:' . $this->montant_total_net],
+            'montantPaye' => ['required', 'numeric', 'min:0', 'max:' . $this->montant_total_apres_points],
             'remisePourcentage' => ['required', 'numeric', 'min:0', 'max:100'],
+            'pointsAUtiliser' => ['nullable', 'integer', 'min:0'],
         ]);
 
         if (!Client::query()->forCurrentSuccursale()->whereKey($this->clientSelectionneId)->exists()) {
@@ -266,16 +310,26 @@ class PointDeVente extends Component
             return;
         }
 
-        if ($this->montantPaye <= 0) {
+        $pointsUtilises = $this->points_a_utiliser_normalises;
+        $this->pointsAUtiliser = (string) $pointsUtilises;
+        $paye = (float) $this->montantPaye;
+        $montantTotalApresPoints = $this->montant_total_apres_points;
+
+        if ($paye > $montantTotalApresPoints) {
+            $this->addError('montantPaye', 'المبلغ المدفوع يتجاوز الإجمالي بعد الخصم بالنقاط.');
+            return;
+        }
+
+        if ($paye <= 0) {
             $this->modeReglement = 'non_paye';
         }
 
-        if ($this->montantPaye > 0 && $this->modeReglement === 'non_paye') {
+        if ($paye > 0 && $this->modeReglement === 'non_paye') {
             $this->addError('modeReglement', 'طريقة غير مدفوع مخصصة فقط للطلبات بدون دفع.');
             return;
         }
 
-        DB::transaction(function (): void {
+        DB::transaction(function () use ($paye, $pointsUtilises, $montantTotalApresPoints): void {
             $succursaleId = SuccursaleContext::currentIdForWrite();
             $numData = Commande::generateNumeroCommande(null, $succursaleId);
 
@@ -288,18 +342,29 @@ class PointDeVente extends Component
                 'date_depot' => now(),
                 'date_livraison_prevue' => now()->addDays(2),
                 'statut' => 'en_cours',
-                'montant_total' => $this->montant_total_net,
-                'montant_paye' => $this->montantPaye,
+                'montant_total' => $montantTotalApresPoints,
+                'montant_paye' => $paye,
                 'reste_a_payer' => $this->reste_a_payer,
                 'remise_depot_pourcentage' => $this->remisePourcentage,
                 'remise_depot_montant' => $this->remise_montant,
                 'remise_reglement_montant' => 0,
-                'total_remise' => $this->remise_montant,
+                'total_remise' => round($this->remise_montant + $this->remise_points_montant, 2),
                 'mode_reglement' => $this->modeReglement,
-                'est_paye' => $this->montantPaye >= $this->montant_total_net,
+                'est_paye' => $paye >= $montantTotalApresPoints,
                 'notes' => $this->notes ?: null,
                 'fk_id_user' => auth()->id(),
             ]);
+
+            if ($pointsUtilises > 0) {
+                LoyaltyPointsService::debitForCommande(
+                    $succursaleId,
+                    (int) $this->clientSelectionneId,
+                    (int) $commande->id,
+                    $pointsUtilises,
+                    $this->remise_points_montant,
+                    auth()->id(),
+                );
+            }
 
             foreach ($this->panier as $item) {
                 DetailCommande::create([
@@ -312,19 +377,28 @@ class PointDeVente extends Component
                 ]);
             }
 
-            if ($this->montantPaye > 0) {
-                CaisseOperation::create([
+            if ($paye > 0) {
+                $operation = CaisseOperation::create([
                     'fk_id_succursale' => $succursaleId,
                     'date_operation' => now(),
-                    'montant_operation' => $this->montantPaye,
+                    'montant_operation' => $paye,
                     'designation' => 'Paiement commande ' . $commande->numero_commande,
                     'fk_id_client' => $this->clientSelectionneId,
-                    'entree_espece' => $this->modeReglement === 'especes' ? $this->montantPaye : 0,
+                    'entree_espece' => $this->modeReglement === 'especes' ? $paye : 0,
                     'retrait_espece' => 0,
                     'fk_id_commande' => $commande->id,
                     'fk_id_user' => auth()->id(),
                     'mode_paiement' => $this->modeReglement,
                 ]);
+
+                LoyaltyPointsService::creditFromPayment(
+                    $succursaleId,
+                    (int) $this->clientSelectionneId,
+                    (int) $commande->id,
+                    (int) $operation->id,
+                    $paye,
+                    auth()->id(),
+                );
             }
 
             $this->commandeCreeId = $commande->id;
@@ -334,11 +408,11 @@ class PointDeVente extends Component
         $this->afficherModalConfirmation = false;
 
         $message = 'تم إنشاء الطلب بنجاح.';
-        if ($this->montantPaye <= 0) {
+        if ($paye <= 0) {
             $message = 'تم تسجيل الإيداع بدون دفع.';
-        } elseif ($this->montantPaye < $this->montant_total) {
+        } elseif ($paye < $this->montant_total_apres_points) {
             $message = 'تم تسجيل الإيداع مع دفعة مقدمة.';
-        } elseif ($this->montantPaye >= $this->montant_total) {
+        } elseif ($paye >= $this->montant_total_apres_points) {
             $message = 'تم تسجيل الإيداع والدفع بالكامل.';
         }
 
@@ -353,15 +427,18 @@ class PointDeVente extends Component
         $this->validate([
             'clientSelectionneId' => ['required', 'exists:clients,id'],
             'modeReglement' => ['required', 'in:especes,carte,virement,non_paye'],
-            'montantPaye' => ['required', 'numeric', 'min:0', 'max:' . $this->montant_total_net],
+            'montantPaye' => ['required', 'numeric', 'min:0', 'max:' . $this->montant_total_apres_points],
             'remisePourcentage' => ['required', 'numeric', 'min:0', 'max:100'],
+            'pointsAUtiliser' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        if ($this->montantPaye <= 0) {
+        $paye = (float) $this->montantPaye;
+
+        if ($paye <= 0) {
             $this->modeReglement = 'non_paye';
         }
 
-        if ($this->montantPaye > 0 && $this->modeReglement === 'non_paye') {
+        if ($paye > 0 && $this->modeReglement === 'non_paye') {
             $this->addError('modeReglement', 'طريقة غير مدفوع مخصصة فقط للطلبات بدون دفع.');
             return;
         }
@@ -392,12 +469,14 @@ class PointDeVente extends Component
             'clientsTrouves',
             'panier',
             'remisePourcentage',
+            'pointsAUtiliser',
+            'soldePointsClient',
             'notes',
         ]);
 
         $this->resetFormClient();
         $this->modeReglement = 'especes';
-        $this->montantPaye = 0;
+        $this->montantPaye = '0';
         $this->afficherModalPaiement = false;
         $this->afficherModalConfirmation = false;
         $this->resetErrorBag();
@@ -421,5 +500,20 @@ class PointDeVente extends Component
     {
         $clean = preg_replace('/\s+/', ' ', trim($value)) ?? '';
         return $clean;
+    }
+
+    private function rafraichirSoldePointsClient(): void
+    {
+        if (!$this->clientSelectionneId) {
+            $this->soldePointsClient = 0;
+            return;
+        }
+
+        $wallet = LoyaltyPointsService::getOrCreateWallet(
+            SuccursaleContext::currentIdForWrite(),
+            (int) $this->clientSelectionneId
+        );
+
+        $this->soldePointsClient = (int) $wallet->solde_points;
     }
 }

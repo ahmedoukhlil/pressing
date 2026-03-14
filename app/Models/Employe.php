@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\SuccursaleContext;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -38,6 +39,11 @@ class Employe extends Model
         return $this->hasMany(AvanceSalaire::class, 'fk_id_employe');
     }
 
+    public function depenses(): HasMany
+    {
+        return $this->hasMany(Depense::class, 'fk_id_employe');
+    }
+
     public function scopeActif(Builder $query): Builder
     {
         return $query->where('actif', true)->orderBy('nom');
@@ -56,5 +62,19 @@ class Employe extends Model
     public function getSalaireNetAttribute(): string
     {
         return (string) max(0, (float) $this->salaire_brut - (float) $this->total_avances_en_cours);
+    }
+
+    public function getTotalTransportAttribute(): string
+    {
+        $query = $this->depenses()
+            ->where('statut', 'validee')
+            ->whereHas('typeDepense', fn ($q) => $q->where('libelle', 'النقل'));
+
+        $succursaleId = SuccursaleContext::currentIdForRead();
+        if ($succursaleId) {
+            $query->where('fk_id_succursale', $succursaleId);
+        }
+
+        return (string) $query->sum('montant');
     }
 }

@@ -129,8 +129,8 @@
                         default => ['label' => 'التطبيق', 'hint' => ''],
                     };
                     $pageTitle = $title ?? $sectionMeta['label'];
-                    $isGerant = auth()->user()?->hasRole('gerant');
-                    $succursales = $isGerant ? \App\Models\Succursale::query()->where('actif', true)->orderBy('nom')->get(['id', 'nom']) : collect();
+                    $canSwitchSuccursale = auth()->user()?->can('succursales.switch');
+                    $succursales = $canSwitchSuccursale ? \App\Models\Succursale::query()->where('actif', true)->orderBy('nom')->get(['id', 'nom']) : collect();
                     $activeSuccursaleId = session('active_succursale_id');
                 ?>
                 <div class="min-w-0 flex items-center gap-2">
@@ -149,7 +149,7 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    @if($isGerant)
+                    @if($canSwitchSuccursale)
                         <form method="POST" action="{{ route('succursales.active') }}">
                             @csrf
                             <select name="succursale_id" onchange="this.form.submit()" class="rounded border-slate-300 text-xs py-1 px-2 leading-tight">

@@ -4,9 +4,21 @@
             <h1 class="page-title">الطلبات</h1>
             <p class="page-subtitle">بحث ومتابعة الحالة وتحصيل الباقي.</p>
         </div>
-        <a href="{{ route('exports.commandes.pdf') }}" class="btn-secondary">
-            <i class="fi fi-rr-file-pdf mr-1"></i> تصدير PDF
-        </a>
+        <div class="flex items-center gap-2">
+            <button
+                type="button"
+                wire:click="ouvrirRappelsModal"
+                class="btn-secondary relative"
+            >
+                <i class="fi fi-rr-bell-ring mr-1"></i> تذكيرات
+                <span class="ms-1 inline-flex items-center justify-center rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white num-ltr">
+                    {{ $commandesARappeler->count() }}
+                </span>
+            </button>
+            <a href="{{ route('exports.commandes.pdf') }}" class="btn-secondary">
+                <i class="fi fi-rr-file-pdf mr-1"></i> تصدير PDF
+            </a>
+        </div>
     </div>
 
     {{-- ═══ Filtres ═══ --}}
@@ -351,6 +363,66 @@
                 <div class="flex justify-end gap-2">
                     <button wire:click="annulerSuppressionCommande" class="btn-secondary">إلغاء</button>
                     <button wire:click="confirmerSuppressionCommande" class="btn-danger">حذف نهائي</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- ═══ Modale rappels ═══ --}}
+    @if($afficherRappelsModal)
+        <div class="modal-overlay flex items-center justify-center p-4">
+            <div class="modal-panel max-w-4xl p-4 space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <i class="fi fi-rr-bell-ring text-amber-600"></i>
+                        <h3 class="text-sm font-semibold text-amber-800">طلبات بحاجة للتذكير (أكثر من 7 أيام)</h3>
+                        <span class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
+                            <span class="num-ltr">{{ $commandesARappeler->count() }}</span>&nbsp;طلب
+                        </span>
+                    </div>
+                    <button wire:click="fermerRappelsModal" class="btn-secondary">إغلاق</button>
+                </div>
+
+                <div class="table-wrap max-h-[60vh] overflow-y-auto">
+                    <table class="table-base w-full">
+                        <thead class="table-head">
+                            <tr>
+                                <th class="table-th">الطلب</th>
+                                <th class="table-th">الزبون</th>
+                                <th class="table-th">الهاتف</th>
+                                <th class="table-th">منذ</th>
+                                <th class="table-th text-right">إجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($commandesARappeler as $commandeRappel)
+                                <tr class="table-row">
+                                    <td class="table-td num-ltr">{{ $commandeRappel->numero_commande }}</td>
+                                    <td class="table-td">{{ $commandeRappel->client?->full_name ?? '-' }}</td>
+                                    <td class="table-td num-ltr">{{ $commandeRappel->client?->telephone ?? '-' }}</td>
+                                    <td class="table-td">
+                                        <span class="inline-flex rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700">
+                                            <span class="num-ltr">{{ max(7, (int) $commandeRappel->date_depot?->diffInDays(now())) }}</span>&nbsp;يوم
+                                        </span>
+                                    </td>
+                                    <td class="table-td text-right">
+                                        <div class="inline-flex items-center gap-2">
+                                            <button wire:click="ouvrirCommandeDepuisRappel({{ $commandeRappel->id }})" class="btn-ghost !px-2.5 !py-1.5 !text-xs text-blue-700">
+                                                <i class="fi fi-rr-eye mr-1"></i> فتح
+                                            </button>
+                                            @if($commandeRappel->client?->telephone)
+                                                <a href="tel:{{ preg_replace('/\D+/', '', $commandeRappel->client->telephone) }}" class="btn-ghost !px-2.5 !py-1.5 !text-xs text-emerald-700">
+                                                    <i class="fi fi-rr-phone-call mr-1"></i> اتصال
+                                                </a>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="5" class="table-td text-center text-slate-500">لا توجد طلبات بحاجة للتذكير.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

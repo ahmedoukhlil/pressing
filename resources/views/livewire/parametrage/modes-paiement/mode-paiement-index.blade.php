@@ -8,16 +8,11 @@
     </div>
 
     @if($afficherForm)
-        <form wire:submit.prevent="sauvegarder" class="card card-body mb-4 grid md:grid-cols-5 gap-3">
+        <form wire:submit.prevent="sauvegarder" class="card card-body mb-4 grid md:grid-cols-4 gap-3">
             <div>
                 <label class="form-label">الاسم *</label>
                 <input wire:model.live="libelle" type="text" placeholder="اسم الطريقة" class="form-field">
                 @error('libelle') <div class="form-error">{{ $message }}</div> @enderror
-            </div>
-            <div>
-                <label class="form-label">الرمز *</label>
-                <input wire:model.live="code" type="text" placeholder="الرمز" class="form-field">
-                @error('code') <div class="form-error">{{ $message }}</div> @enderror
             </div>
             <div>
                 <label class="form-label">الأيقونة</label>
@@ -43,7 +38,6 @@
             <thead class="table-head">
             <tr>
                 <th class="table-th">الاسم</th>
-                <th class="table-th">الرمز</th>
                 <th class="table-th">الترتيب</th>
                 <th class="table-th">الحالة</th>
                 <th class="table-th text-right">الإجراءات</th>
@@ -53,7 +47,6 @@
             @forelse($modes as $mode)
                 <tr class="table-row">
                     <td class="table-td">{{ $mode->icone }} {{ $mode->libelle }}</td>
-                    <td class="table-td">{{ $mode->code }}</td>
                     <td class="table-td">{{ $mode->ordre }}</td>
                     <td class="table-td">
                         <span class="status-badge {{ $mode->actif ? 'status-success' : 'status-neutral' }}">
@@ -77,7 +70,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="5" class="table-td text-center text-gray-500">لا توجد طرق دفع.</td></tr>
+                <tr><td colspan="4" class="table-td text-center text-gray-500">لا توجد طرق دفع.</td></tr>
             @endforelse
             </tbody>
         </table>

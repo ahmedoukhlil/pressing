@@ -13,6 +13,8 @@ use Livewire\Component;
 
 class AvanceSalaireIndex extends Component
 {
+    private const TYPE_SALAIRES_LABEL = 'الرواتب';
+
     public int $employeId;
     public Employe $employe;
     public bool $vuePaiementSalaire = false;
@@ -77,10 +79,7 @@ class AvanceSalaireIndex extends Component
         }
 
         DB::transaction(function (): void {
-            $typeSalaire = TypeDepense::updateOrCreate(
-                ['libelle' => 'Salaires'],
-                ['icone' => '👥', 'couleur' => '#10B981', 'actif' => true, 'ordre' => 1]
-            );
+            $typeSalaire = $this->resolveTypeSalaire();
 
             $avance = AvanceSalaire::create([
                 'fk_id_employe' => $this->employeId,
@@ -98,6 +97,7 @@ class AvanceSalaireIndex extends Component
                 'designation' => 'Avance salaire - ' . $this->employe->full_name,
                 'montant' => $this->montant,
                 'mode_paiement' => 'especes',
+                'fk_id_employe' => $this->employeId,
                 'reference' => 'AVANCE-' . $avance->id,
                 'statut' => 'validee',
                 'notes' => $this->notes ?: null,
@@ -109,7 +109,7 @@ class AvanceSalaireIndex extends Component
 
         $this->employe->refresh();
         $this->afficherForm = false;
-        $this->messageSucces = 'Avance enregistree et comptabilisee en depense Salaires.';
+        $this->messageSucces = 'تم تسجيل السلفة واحتسابها كمصروف من نوع الرواتب.';
         $this->dispatch('notify', type: 'success', message: $this->messageSucces);
     }
 
@@ -176,10 +176,7 @@ class AvanceSalaireIndex extends Component
         $salaireNet = max(0, $salaireBrut - $totalAvances);
 
         DB::transaction(function () use ($salaireBrut, $totalAvances, $salaireNet): void {
-            $typeSalaire = TypeDepense::updateOrCreate(
-                ['libelle' => 'Salaires'],
-                ['icone' => '👥', 'couleur' => '#10B981', 'actif' => true, 'ordre' => 1]
-            );
+            $typeSalaire = $this->resolveTypeSalaire();
 
             if ($salaireNet > 0) {
                 Depense::create([
@@ -188,6 +185,7 @@ class AvanceSalaireIndex extends Component
                     'designation' => 'Paiement salaire - ' . $this->employe->full_name,
                     'montant' => $salaireNet,
                     'mode_paiement' => $this->modePaiementSalaire,
+                    'fk_id_employe' => $this->employeId,
                     'reference' => 'PAIE-' . $this->employe->id . '-' . now()->format('YmdHis'),
                     'statut' => 'validee',
                     'notes' => trim(
@@ -233,5 +231,32 @@ class AvanceSalaireIndex extends Component
                 ->get(),
             'modesPaiement' => ModePaiement::actif()->get(),
         ])->layout('layouts.app');
+    }
+
+    private function resolveTypeSalaire(): TypeDepense
+    {
+        $type = TypeDepense::query()
+            ->where('libelle', self::TYPE_SALAIRES_LABEL)
+            ->first();
+
+        if ($type) {
+            $type->update([
+                'libelle' => self::TYPE_SALAIRES_LABEL,
+                'icone' => '👥',
+                'couleur' => '#10B981',
+                'actif' => true,
+                'ordre' => 1,
+            ]);
+
+            return $type->fresh();
+        }
+
+        return TypeDepense::create([
+            'libelle' => self::TYPE_SALAIRES_LABEL,
+            'icone' => '👥',
+            'couleur' => '#10B981',
+            'actif' => true,
+            'ordre' => 1,
+        ]);
     }
 }

@@ -86,11 +86,15 @@
             </div>
 
             <div class="rounded-xl border border-slate-200 bg-white p-4">
-                <h3 class="text-sm font-semibold text-slate-800 mb-3">كل الصلاحيات المتاحة</h3>
+                <h3 class="text-sm font-semibold text-slate-800 mb-3">صلاحيات الوصول إلى قوائم الشريط الجانبي</h3>
+                @php($permissionLabels = config('rbac.permission_labels', []))
+                @php($sidebarPermissions = config('rbac.sidebar_view_permissions', []))
                 <div class="flex flex-wrap gap-2">
                     @forelse($permissions as $permission)
+                        @continue(!in_array($permission->name, $sidebarPermissions, true))
+                        @php($permissionLabel = $permissionLabels[$permission->name] ?? $permission->name)
                         <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700">
-                            {{ $permission->name }}
+                            {{ $permissionLabel }}
                         </span>
                     @empty
                         <p class="text-xs text-slate-500">لا توجد صلاحيات.</p>
