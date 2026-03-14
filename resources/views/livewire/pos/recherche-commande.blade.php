@@ -81,7 +81,7 @@
             <span class="text-xs font-medium text-blue-800">
                 <span class="num-ltr">{{ count($selectionCommandes) }}</span> محدد
             </span>
-            <select wire:model="statutGroupe" class="form-field !h-7 !text-[11px] max-w-[180px]">
+            <select wire:model.live="statutGroupe" class="form-field !h-7 !text-[11px] max-w-[180px]">
                 <option value="">اختر الإجراء</option>
                 <option value="pret">تحويل إلى جاهز</option>
             </select>
@@ -145,11 +145,11 @@
                                 </span>
                             </td>
                             <td class="table-td text-center" wire:click.stop>
-                                @role('gerant')
+                                @hasanyrole(['gerant', 'المسير'])
                                     <button wire:click="demanderSuppressionCommande({{ $item->id }})" class="text-red-400 hover:text-red-600" title="حذف">
                                         <i class="fi fi-rr-trash text-[11px]"></i>
                                     </button>
-                                @endrole
+                                @endhasanyrole
                             </td>
                         </tr>
                     @empty
@@ -257,11 +257,11 @@
                     <a href="{{ route('commandes.ticket', $commande) }}" target="_blank" class="btn-secondary">
                         <i class="fi fi-rr-print mr-1"></i> وصل
                     </a>
-                    @role('gerant')
+                    @hasanyrole(['gerant', 'المسير'])
                         <button wire:click="demanderSuppressionCommande({{ $commande->id }})" class="btn-danger">
                             <i class="fi fi-rr-trash mr-1"></i> حذف
                         </button>
-                    @endrole
+                    @endhasanyrole
                 </div>
             @else
                 <div class="card card-body flex flex-col items-center justify-center py-12 text-slate-300">

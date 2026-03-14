@@ -43,12 +43,12 @@
                 </a>
             @endforeach
 
-            @role('gerant')
+            @hasanyrole(['gerant', 'المسير'])
                 <div class="pt-3 mt-3 border-t border-gray-100 space-y-1">
                     <a href="{{ route('admin.users.index') }}" class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ request()->routeIs('admin.users.*') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">المستخدمون</a>
                     <a href="{{ route('admin.roles.index') }}" class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ request()->routeIs('admin.roles.*') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">الأدوار</a>
                 </div>
-            @endrole
+            @endhasanyrole
         </div>
 
         <div class="border-t border-gray-100 p-3">
@@ -104,12 +104,12 @@
                 </a>
             @endforeach
 
-            @role('gerant')
+            @hasanyrole(['gerant', 'المسير'])
                 <div class="pt-3 mt-3 border-t border-gray-100 space-y-1">
                     <a href="{{ route('admin.users.index') }}" @click="open = false" class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ request()->routeIs('admin.users.*') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">المستخدمون</a>
                     <a href="{{ route('admin.roles.index') }}" @click="open = false" class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ request()->routeIs('admin.roles.*') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">الأدوار</a>
                 </div>
-            @endrole
+            @endhasanyrole
         </div>
 
         <div class="border-t border-gray-100 p-3">

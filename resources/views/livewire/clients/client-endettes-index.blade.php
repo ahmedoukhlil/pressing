@@ -40,11 +40,11 @@
                                 <a href="{{ route('clients.edit', $client->id) }}" wire:navigate class="btn-ghost !px-2.5 !py-1.5 !text-xs text-blue-700">
                                     <i class="fi fi-rr-edit mr-1"></i> تعديل
                                 </a>
-                                @role('gerant')
+                                @hasanyrole(['gerant', 'المسير'])
                                     <button wire:click="demanderSuppressionClient({{ $client->id }})" class="btn-ghost !px-2.5 !py-1.5 !text-xs text-red-600">
                                         <i class="fi fi-rr-trash mr-1"></i> حذف
                                     </button>
-                                @endrole
+                                @endhasanyrole
                             </div>
                         </td>
                     </tr>

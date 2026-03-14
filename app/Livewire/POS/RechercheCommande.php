@@ -276,7 +276,7 @@ class RechercheCommande extends Component
 
     public function demanderSuppressionCommande(int $commandeId): void
     {
-        if (!auth()->user()?->hasRole('gerant')) {
+        if (!auth()->user()?->hasAnyRole(['gerant', 'المسير'])) {
             abort(403);
         }
 
@@ -314,7 +314,7 @@ class RechercheCommande extends Component
 
     public function confirmerSuppressionCommande(): void
     {
-        if (!auth()->user()?->hasRole('gerant')) {
+        if (!auth()->user()?->hasAnyRole(['gerant', 'المسير'])) {
             abort(403);
         }
 
@@ -371,35 +371,29 @@ class RechercheCommande extends Component
             'statutGroupe' => ['required', 'in:pret'],
         ]);
 
-        $transitionsAutorisees = $this->getTransitionsAutorisees();
-        $commandes = Commande::query()->forCurrentSuccursale()->whereIn('id', $ids)->get();
+        $baseQuery = Commande::query()
+            ->forCurrentSuccursale()
+            ->whereIn('id', $ids);
 
-        $updated = 0;
-        $ignored = 0;
+        $totalSelection = (clone $baseQuery)->count();
+        if ($totalSelection === 0) {
+            $this->messageErreur = 'الطلبات المحددة غير متاحة في الفرع الحالي.';
+            $this->dispatch('notify', type: 'error', message: $this->messageErreur);
+            return;
+        }
 
-        DB::transaction(function () use ($commandes, $transitionsAutorisees, &$updated, &$ignored): void {
-            foreach ($commandes as $commande) {
-                // Regle metier: en changement groupe, on autorise uniquement en_cours -> pret.
-                if ($commande->statut !== 'en_cours' || $this->statutGroupe !== 'pret') {
-                    $ignored++;
-                    continue;
-                }
+        // Mise a jour en lot robuste: toutes les commandes "en_cours" (et legacy en_attente)
+        // basculent vers "pret" en une seule operation.
+        $updated = (clone $baseQuery)
+            ->whereIn('statut', ['en_cours', 'en_attente'])
+            ->update([
+                'statut' => 'pret',
+            ]);
 
-                if (!in_array($this->statutGroupe, $transitionsAutorisees[$commande->statut] ?? [], true)) {
-                    $ignored++;
-                    continue;
-                }
-
-                $commande->update([
-                    'statut' => $this->statutGroupe,
-                    'date_livraison_reelle' => $this->statutGroupe === 'livre' ? now() : $commande->date_livraison_reelle,
-                ]);
-                $updated++;
-            }
-        });
+        $ignored = max(0, $totalSelection - $updated);
 
         if ($updated === 0) {
-            $this->messageErreur = 'لم يتم تحديث أي طلب (انتقالات غير صالحة).';
+            $this->messageErreur = 'لم يتم تحديث أي طلب. تأكد أن الطلبات في حالة قيد المعالجة.';
             $this->dispatch('notify', type: 'error', message: $this->messageErreur);
         } else {
             $this->messageSucces = "تم تحديث {$updated} طلب.";

@@ -22,7 +22,7 @@ class ClientEndettesIndex extends Component
 
     public function demanderSuppressionClient(int $id): void
     {
-        if (!auth()->user()?->hasRole('gerant')) {
+        if (!auth()->user()?->hasAnyRole(['gerant', 'المسير'])) {
             abort(403);
         }
 
@@ -44,7 +44,7 @@ class ClientEndettesIndex extends Component
 
     public function confirmerSuppressionClient(): void
     {
-        if (!auth()->user()?->hasRole('gerant')) {
+        if (!auth()->user()?->hasAnyRole(['gerant', 'المسير'])) {
             abort(403);
         }
 

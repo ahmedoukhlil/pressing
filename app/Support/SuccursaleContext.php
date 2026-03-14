@@ -10,7 +10,11 @@ class SuccursaleContext
     public static function isGerant(): bool
     {
         $user = auth()->user();
-        return $user ? $user->hasRole('gerant') : false;
+        if (!$user) {
+            return false;
+        }
+
+        return $user->hasAnyRole(['gerant', 'المسير']);
     }
 
     public static function currentIdForRead(): ?int

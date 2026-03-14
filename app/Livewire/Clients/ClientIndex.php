@@ -34,7 +34,7 @@ class ClientIndex extends Component
 
     public function demanderSuppressionClient(int $id): void
     {
-        if (!auth()->user()?->hasRole('gerant')) {
+        if (!auth()->user()?->hasAnyRole(['gerant', 'المسير'])) {
             abort(403);
         }
 
@@ -56,7 +56,7 @@ class ClientIndex extends Component
 
     public function confirmerSuppressionClient(): void
     {
-        if (!auth()->user()?->hasRole('gerant')) {
+        if (!auth()->user()?->hasAnyRole(['gerant', 'المسير'])) {
             abort(403);
         }
 

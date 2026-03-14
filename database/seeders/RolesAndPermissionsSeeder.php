@@ -70,10 +70,7 @@ class RolesAndPermissionsSeeder extends Seeder
             Permission::findOrCreate($permission, 'web');
         }
 
-        $caissier = Role::findOrCreate('caissier', 'web');
-        $gerant = Role::findOrCreate('gerant', 'web');
-
-        $caissier->syncPermissions([
+        $caissierPermissions = [
             'view.dashboard',
             'view.pos',
             'view.recherche',
@@ -86,8 +83,25 @@ class RolesAndPermissionsSeeder extends Seeder
             'export.depenses.pdf',
             'export.finances.details.pdf',
             'export.finances.details.excel',
-        ]);
-        $gerant->syncPermissions($permissions);
+        ];
+
+        $rolesCaissier = [
+            Role::findOrCreate('caissier', 'web'),
+            Role::findOrCreate('موظف الاستقبال', 'web'),
+        ];
+
+        $rolesGerant = [
+            Role::findOrCreate('gerant', 'web'),
+            Role::findOrCreate('المسير', 'web'),
+        ];
+
+        foreach ($rolesCaissier as $role) {
+            $role->syncPermissions($caissierPermissions);
+        }
+
+        foreach ($rolesGerant as $role) {
+            $role->syncPermissions($permissions);
+        }
 
         $admin = User::firstOrCreate(
             ['email' => 'admin@pressing.local'],
