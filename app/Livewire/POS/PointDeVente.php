@@ -41,6 +41,7 @@ class PointDeVente extends Component
     public function mount(): void
     {
         $this->resetPanier();
+        $this->modeReglement = $this->codeModePaiementParDefaut();
     }
 
     public function rechercherClient(): void
@@ -267,10 +268,7 @@ class PointDeVente extends Component
 
         $this->montantPaye = '0';
         $this->pointsAUtiliser = '0';
-        $codes = $this->getCodesModesPaiement();
-        $this->modeReglement = in_array('non_paye', $codes, true)
-            ? 'non_paye'
-            : ($codes[0] ?? 'especes');
+        $this->modeReglement = $this->codeModePaiementParDefaut();
         $this->remisePourcentage = (string) max(0, min(100, (float) $this->remisePourcentage));
         $this->rafraichirSoldePointsClient();
         $this->afficherModalPaiement = true;
@@ -282,14 +280,13 @@ class PointDeVente extends Component
         $codes = $this->getCodesModesPaiement();
 
         if ($montant <= 0) {
-            $this->modeReglement = in_array('non_paye', $codes, true)
-                ? 'non_paye'
-                : ($codes[0] ?? 'especes');
+            $this->modeReglement = $this->codeModePaiementParDefaut();
             return;
         }
 
         if ($this->modeReglement === 'non_paye' || ! in_array($this->modeReglement, $codes, true)) {
-            $this->modeReglement = $this->premierCodeModePayant();
+            $defaut = $this->codeModePaiementParDefaut();
+            $this->modeReglement = $defaut !== 'non_paye' ? $defaut : $this->premierCodeModePayant();
         }
     }
 
@@ -491,10 +488,7 @@ class PointDeVente extends Component
         ]);
 
         $this->resetFormClient();
-        $codes = $this->getCodesModesPaiement();
-        $this->modeReglement = in_array('especes', $codes, true)
-            ? 'especes'
-            : $this->premierCodeModePayant();
+        $this->modeReglement = $this->codeModePaiementParDefaut();
         $this->montantPaye = '0';
         $this->afficherModalPaiement = false;
         $this->afficherModalConfirmation = false;
@@ -538,6 +532,18 @@ class PointDeVente extends Component
             if ($code !== 'non_paye') {
                 return $code;
             }
+        }
+
+        return $this->getCodesModesPaiement()[0] ?? 'especes';
+    }
+
+    /** Premier mode actif trié par `ordre` (ex. ordre 1 dans le paramétrage). */
+    private function codeModePaiementParDefaut(): string
+    {
+        $code = ModePaiement::actif()->orderBy('ordre')->value('code');
+
+        if (is_string($code) && $code !== '') {
+            return $code;
         }
 
         return $this->getCodesModesPaiement()[0] ?? 'especes';
