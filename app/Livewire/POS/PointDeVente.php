@@ -6,10 +6,12 @@ use App\Models\CaisseOperation;
 use App\Models\Client;
 use App\Models\Commande;
 use App\Models\DetailCommande;
+use App\Models\ModePaiement;
 use App\Models\Service;
 use App\Support\LoyaltyPointsService;
 use App\Support\SuccursaleContext;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class PointDeVente extends Component
@@ -265,7 +267,10 @@ class PointDeVente extends Component
 
         $this->montantPaye = '0';
         $this->pointsAUtiliser = '0';
-        $this->modeReglement = 'non_paye';
+        $codes = $this->getCodesModesPaiement();
+        $this->modeReglement = in_array('non_paye', $codes, true)
+            ? 'non_paye'
+            : ($codes[0] ?? 'especes');
         $this->remisePourcentage = (string) max(0, min(100, (float) $this->remisePourcentage));
         $this->rafraichirSoldePointsClient();
         $this->afficherModalPaiement = true;
@@ -274,14 +279,17 @@ class PointDeVente extends Component
     public function updatedMontantPaye($value): void
     {
         $montant = (float) $value;
+        $codes = $this->getCodesModesPaiement();
 
         if ($montant <= 0) {
-            $this->modeReglement = 'non_paye';
+            $this->modeReglement = in_array('non_paye', $codes, true)
+                ? 'non_paye'
+                : ($codes[0] ?? 'especes');
             return;
         }
 
-        if ($this->modeReglement === 'non_paye') {
-            $this->modeReglement = 'especes';
+        if ($this->modeReglement === 'non_paye' || ! in_array($this->modeReglement, $codes, true)) {
+            $this->modeReglement = $this->premierCodeModePayant();
         }
     }
 
@@ -297,9 +305,11 @@ class PointDeVente extends Component
             return;
         }
 
+        $codesModes = $this->getCodesModesPaiement();
+
         $this->validate([
             'clientSelectionneId' => ['required', 'exists:clients,id'],
-            'modeReglement' => ['required', 'in:especes,carte,virement,non_paye'],
+            'modeReglement' => ['required', Rule::in($codesModes)],
             'montantPaye' => ['required', 'numeric', 'min:0', 'max:' . $this->montant_total_apres_points],
             'remisePourcentage' => ['required', 'numeric', 'min:0', 'max:100'],
             'pointsAUtiliser' => ['nullable', 'integer', 'min:0'],
@@ -321,7 +331,9 @@ class PointDeVente extends Component
         }
 
         if ($paye <= 0) {
-            $this->modeReglement = 'non_paye';
+            $this->modeReglement = in_array('non_paye', $codesModes, true)
+                ? 'non_paye'
+                : ($codesModes[0] ?? $this->modeReglement);
         }
 
         if ($paye > 0 && $this->modeReglement === 'non_paye') {
@@ -424,9 +436,11 @@ class PointDeVente extends Component
 
     public function confirmerCommande(): void
     {
+        $codesModes = $this->getCodesModesPaiement();
+
         $this->validate([
             'clientSelectionneId' => ['required', 'exists:clients,id'],
-            'modeReglement' => ['required', 'in:especes,carte,virement,non_paye'],
+            'modeReglement' => ['required', Rule::in($codesModes)],
             'montantPaye' => ['required', 'numeric', 'min:0', 'max:' . $this->montant_total_apres_points],
             'remisePourcentage' => ['required', 'numeric', 'min:0', 'max:100'],
             'pointsAUtiliser' => ['nullable', 'integer', 'min:0'],
@@ -435,7 +449,9 @@ class PointDeVente extends Component
         $paye = (float) $this->montantPaye;
 
         if ($paye <= 0) {
-            $this->modeReglement = 'non_paye';
+            $this->modeReglement = in_array('non_paye', $codesModes, true)
+                ? 'non_paye'
+                : ($codesModes[0] ?? $this->modeReglement);
         }
 
         if ($paye > 0 && $this->modeReglement === 'non_paye') {
@@ -475,7 +491,10 @@ class PointDeVente extends Component
         ]);
 
         $this->resetFormClient();
-        $this->modeReglement = 'especes';
+        $codes = $this->getCodesModesPaiement();
+        $this->modeReglement = in_array('especes', $codes, true)
+            ? 'especes'
+            : $this->premierCodeModePayant();
         $this->montantPaye = '0';
         $this->afficherModalPaiement = false;
         $this->afficherModalConfirmation = false;
@@ -487,6 +506,7 @@ class PointDeVente extends Component
     {
         return view('livewire.pos.point-de-vente', [
             'services' => Service::actif()->get(),
+            'modesPaiement' => ModePaiement::actif()->get(),
         ])->layout('layouts.app');
     }
 
@@ -500,6 +520,27 @@ class PointDeVente extends Component
     {
         $clean = preg_replace('/\s+/', ' ', trim($value)) ?? '';
         return $clean;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function getCodesModesPaiement(): array
+    {
+        $codes = ModePaiement::actif()->pluck('code')->filter()->values()->toArray();
+
+        return $codes !== [] ? $codes : ['especes', 'carte', 'virement', 'non_paye'];
+    }
+
+    private function premierCodeModePayant(): string
+    {
+        foreach ($this->getCodesModesPaiement() as $code) {
+            if ($code !== 'non_paye') {
+                return $code;
+            }
+        }
+
+        return $this->getCodesModesPaiement()[0] ?? 'especes';
     }
 
     private function rafraichirSoldePointsClient(): void

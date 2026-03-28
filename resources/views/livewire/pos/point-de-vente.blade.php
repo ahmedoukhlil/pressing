@@ -236,10 +236,19 @@
                     <div>
                         <label class="form-label">طريقة الدفع</label>
                         <select wire:model="modeReglement" class="form-field">
-                            <option value="especes">نقدًا</option>
-                            <option value="carte">بطاقة</option>
-                            <option value="virement">تحويل</option>
-                            <option value="non_paye" @disabled((float) $montantPaye > 0)>غير مدفوع</option>
+                            @forelse($modesPaiement as $mode)
+                                <option
+                                    value="{{ $mode->code }}"
+                                    @if($mode->code === 'non_paye' && (float) $montantPaye > 0) disabled @endif
+                                >
+                                    {{ $mode->icone ? $mode->icone . ' ' : '' }}{{ $mode->libelle }}
+                                </option>
+                            @empty
+                                <option value="especes">نقدًا</option>
+                                <option value="carte">بطاقة</option>
+                                <option value="virement">تحويل</option>
+                                <option value="non_paye" @disabled((float) $montantPaye > 0)>غير مدفوع</option>
+                            @endforelse
                         </select>
                         @error('modeReglement') <div class="form-error">{{ $message }}</div> @enderror
                     </div>
