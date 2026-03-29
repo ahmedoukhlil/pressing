@@ -4,19 +4,21 @@
             <h1 class="page-title">الطلبات</h1>
             <p class="page-subtitle">بحث ومتابعة الحالة وتحصيل الباقي.</p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
             <button
                 type="button"
                 wire:click="ouvrirRappelsModal"
-                class="btn-secondary relative"
+                class="btn-secondary relative !py-2 !px-3"
             >
-                <i class="fi fi-rr-bell-ring mr-1"></i> تذكيرات
-                <span class="ms-1 inline-flex items-center justify-center rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white num-ltr">
+                <i class="fi fi-rr-bell-ring text-sm opacity-80 shrink-0"></i>
+                <span>تذكيرات</span>
+                <span class="ms-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white shadow-sm num-ltr tabular-nums">
                     {{ $commandesARappeler->count() }}
                 </span>
             </button>
-            <a href="{{ route('exports.commandes.pdf') }}" class="btn-secondary">
-                <i class="fi fi-rr-file-pdf mr-1"></i> تصدير PDF
+            <a href="{{ route('exports.commandes.pdf') }}" class="btn-secondary !py-2 !px-3">
+                <i class="fi fi-rr-file-pdf text-sm text-red-600/90 shrink-0"></i>
+                <span>تصدير PDF</span>
             </a>
         </div>
     </div>
@@ -35,32 +37,34 @@
                 <i class="fi fi-rr-search absolute top-1/2 -translate-y-1/2 end-2 text-slate-400 text-[10px] pointer-events-none"></i>
             </div>
 
-            <div class="flex items-center gap-1 rounded-md border border-slate-200 p-0.5">
-                <button wire:click="$set('filtreStatut', '')"
-                    class="px-2 py-1 rounded text-[11px] font-medium transition {{ $filtreStatut === '' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-slate-700' }}">
+            <div class="flex items-center gap-0.5 rounded-lg border border-slate-200/90 bg-slate-50/90 p-1 shadow-inner">
+                <button wire:click="$set('filtreStatut', '')" type="button"
+                    class="rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition duration-150 active:scale-[0.97] {{ $filtreStatut === '' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-800 hover:shadow-sm' }}">
                     الكل
                 </button>
-                <button wire:click="$set('filtreStatut', 'en_cours')"
-                    class="px-2 py-1 rounded text-[11px] font-medium transition {{ $filtreStatut === 'en_cours' ? 'bg-amber-500 text-white' : 'text-slate-500 hover:text-slate-700' }}">
+                <button wire:click="$set('filtreStatut', 'en_cours')" type="button"
+                    class="rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition duration-150 active:scale-[0.97] {{ $filtreStatut === 'en_cours' ? 'bg-amber-500 text-white shadow-sm shadow-amber-600/30' : 'text-slate-600 hover:bg-white hover:text-slate-800 hover:shadow-sm' }}">
                     قيد المعالجة
                 </button>
-                <button wire:click="$set('filtreStatut', 'pret')"
-                    class="px-2 py-1 rounded text-[11px] font-medium transition {{ $filtreStatut === 'pret' ? 'bg-blue-500 text-white' : 'text-slate-500 hover:text-slate-700' }}">
+                <button wire:click="$set('filtreStatut', 'pret')" type="button"
+                    class="rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition duration-150 active:scale-[0.97] {{ $filtreStatut === 'pret' ? 'bg-sky-600 text-white shadow-sm shadow-sky-900/25' : 'text-slate-600 hover:bg-white hover:text-slate-800 hover:shadow-sm' }}">
                     جاهز
                 </button>
-                <button wire:click="$set('filtreStatut', 'livre')"
-                    class="px-2 py-1 rounded text-[11px] font-medium transition {{ $filtreStatut === 'livre' ? 'bg-emerald-500 text-white' : 'text-slate-500 hover:text-slate-700' }}">
+                <button wire:click="$set('filtreStatut', 'livre')" type="button"
+                    class="rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition duration-150 active:scale-[0.97] {{ $filtreStatut === 'livre' ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-900/25' : 'text-slate-600 hover:bg-white hover:text-slate-800 hover:shadow-sm' }}">
                     مسلّم
                 </button>
             </div>
 
-            <button type="button" wire:click="$toggle('afficherFiltresAvances')" class="text-[11px] text-slate-500 hover:text-slate-700">
-                <i class="fi fi-rr-calendar mr-0.5"></i> التاريخ
+            <button type="button" wire:click="$toggle('afficherFiltresAvances')" class="btn-ghost !px-2.5 !py-1.5 !text-[11px] text-slate-600 border border-transparent hover:border-slate-200">
+                <i class="fi fi-rr-calendar text-sm opacity-70"></i>
+                <span>التاريخ</span>
             </button>
 
             @if($recherche !== '' || $filtreStatut !== '' || $dateDebut !== '' || $dateFin !== '')
-                <button wire:click="reinitialiserFiltres" class="text-[11px] text-red-500 hover:text-red-700">
-                    <i class="fi fi-rr-cross-small"></i> مسح
+                <button type="button" wire:click="reinitialiserFiltres" class="btn-ghost !px-2.5 !py-1.5 !text-[11px] text-red-600 hover:bg-red-50 hover:text-red-700">
+                    <i class="fi fi-rr-cross-small text-sm"></i>
+                    <span>مسح</span>
                 </button>
             @endif
         </div>
@@ -77,18 +81,22 @@
 
     {{-- ═══ Actions groupées (contextuel) ═══ --}}
     @if(count($selectionCommandes) > 0)
-        <div class="flex items-center gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2">
-            <span class="text-xs font-medium text-blue-800">
-                <span class="num-ltr">{{ count($selectionCommandes) }}</span> محدد
+        <div class="flex flex-wrap items-center gap-2 rounded-xl bg-gradient-to-l from-blue-50 to-indigo-50/80 border border-blue-200/80 px-3 py-2.5 shadow-sm">
+            <span class="inline-flex items-center gap-1 rounded-lg bg-white/80 px-2 py-1 text-xs font-semibold text-blue-900 shadow-sm">
+                <span class="num-ltr tabular-nums text-blue-700">{{ count($selectionCommandes) }}</span>
+                <span>محدد</span>
             </span>
-            <select wire:model.live="statutGroupe" class="form-field !h-7 !text-[11px] max-w-[180px]">
+            <select wire:model.live="statutGroupe" class="form-field !h-9 !text-[11px] max-w-[200px] rounded-lg border-blue-200/80 font-medium shadow-sm">
                 <option value="">اختر الإجراء</option>
                 <option value="pret">تحويل إلى جاهز</option>
             </select>
-            <button wire:click="appliquerChangementStatutGroupe" class="btn-primary !py-1 !text-[11px]" @disabled(empty($statutGroupe))>
-                تطبيق
+            <button type="button" wire:click="appliquerChangementStatutGroupe" class="btn-primary !py-2 !px-4 shadow-md shadow-blue-900/20" @disabled(empty($statutGroupe))>
+                <i class="fi fi-rr-check text-sm"></i>
+                <span>تطبيق</span>
             </button>
-            <button wire:click="$set('selectionCommandes', [])" class="text-[11px] text-blue-600 hover:text-blue-800 mr-auto">إلغاء التحديد</button>
+            <button type="button" wire:click="$set('selectionCommandes', [])" class="btn-ghost !py-2 !text-[11px] text-blue-700 hover:bg-blue-100/60 ms-auto">
+                إلغاء التحديد
+            </button>
         </div>
     @endif
 
@@ -146,8 +154,8 @@
                             </td>
                             <td class="table-td text-center" wire:click.stop>
                                 @hasanyrole(['gerant', 'المسير'])
-                                    <button wire:click="demanderSuppressionCommande({{ $item->id }})" class="text-red-400 hover:text-red-600" title="حذف">
-                                        <i class="fi fi-rr-trash text-[11px]"></i>
+                                    <button type="button" wire:click="demanderSuppressionCommande({{ $item->id }})" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-500 transition hover:bg-red-50 hover:text-red-700 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300" title="حذف">
+                                        <i class="fi fi-rr-trash text-xs"></i>
                                     </button>
                                 @endhasanyrole
                             </td>
@@ -182,9 +190,14 @@
                                 'livre' => 'bg-emerald-100 text-emerald-700',
                             ];
                         @endphp
-                        <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-medium {{ $detailStatutStyles[$commande->statut] ?? 'bg-slate-100 text-slate-600' }}">
-                            {{ $commande->statut_label }}
-                        </span>
+                        <div class="flex flex-col items-end gap-0.5">
+                            <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-medium {{ $detailStatutStyles[$commande->statut] ?? 'bg-slate-100 text-slate-600' }}">
+                                {{ $commande->statut_label }}
+                            </span>
+                            @if($commande->remise_partielle_en_cours)
+                                <span class="text-[10px] font-medium text-violet-600">تسليم تدريجي</span>
+                            @endif
+                        </div>
                     </div>
 
                     {{-- Montants en grille --}}
@@ -212,56 +225,166 @@
                     </div>
                 </div>
 
-                {{-- Détails articles --}}
-                <div class="card overflow-hidden">
-                    <div class="px-3 py-1.5 border-b border-slate-100 bg-slate-50/50">
-                        <span class="text-[11px] font-medium text-slate-600">تفاصيل القطع</span>
+                {{-- Détails articles (liste cartes — adaptée au panneau étroit) --}}
+                <div class="card overflow-hidden shadow-sm border-slate-200/80">
+                    <div class="px-3 py-2.5 border-b border-slate-100 bg-gradient-to-l from-slate-50/90 to-white">
+                        <div class="flex items-start gap-2.5">
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-white shadow-sm text-slate-500">
+                                <i class="fi fi-rr-receipt text-sm"></i>
+                            </span>
+                            <div class="min-w-0 flex-1 space-y-1">
+                                <h3 class="text-xs font-semibold text-slate-800 leading-tight">تفاصيل القطع</h3>
+                                <details class="group text-[10px] text-slate-500 leading-relaxed">
+                                    <summary class="cursor-pointer list-none text-indigo-600 hover:text-indigo-800 [&::-webkit-details-marker]:hidden flex items-center gap-0.5">
+                                        <i class="fi fi-rr-info text-[9px] opacity-80"></i>
+                                        <span>كيفية التسليم التدريجي</span>
+                                        <span class="text-[8px] text-indigo-400 transition group-open:rotate-180 inline-block">▼</span>
+                                    </summary>
+                                    <p class="mt-1.5 ps-1 text-slate-500 border-s border-slate-200/80 pe-0.5">
+                                        عيّن كل قطعة جاهزة، ثم سجّل الكمية المسلّمة عند مجيء الزبون. يُغلق الطلب تلقائيًا بعد اكتمال كل الكميات.
+                                    </p>
+                                </details>
+                            </div>
+                        </div>
                     </div>
-                    <table class="table-base w-full">
-                        <thead class="table-head">
-                            <tr>
-                                <th class="table-th">الخدمة</th>
-                                <th class="table-th text-center">الكمية</th>
-                                <th class="table-th">الإجمالي</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($commande->details as $detail)
-                                <tr class="table-row">
-                                    <td class="table-td text-xs">{{ $detail->service?->libelle_ar ?: '-' }}</td>
-                                    <td class="table-td text-center"><span class="num-ltr text-xs">{{ (int) $detail->quantite }}</span></td>
-                                    <td class="table-td"><span class="num-ltr text-xs font-medium">{{ number_format((float) $detail->sous_total, 0) }}</span></td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                    <ul class="divide-y divide-slate-100 max-h-[min(52vh,28rem)] overflow-y-auto overscroll-contain">
+                        @foreach($commande->details as $detail)
+                            @php
+                                $qRendue = (int) $detail->quantite_rendue;
+                                $qTot = (int) $detail->quantite;
+                                $restant = max(0, $qTot - $qRendue);
+                                $pct = $qTot > 0 ? (int) round(min(100, ($qRendue / $qTot) * 100)) : 0;
+                                $badgeDone = $qRendue >= $qTot;
+                                $badgeClass = $badgeDone
+                                    ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/70'
+                                    : ($detail->statut_ligne === 'pret'
+                                        ? 'bg-sky-50 text-sky-900 ring-1 ring-sky-200/80'
+                                        : 'bg-amber-50 text-amber-900 ring-1 ring-amber-200/70');
+                            @endphp
+                            <li wire:key="detail-{{ $detail->id }}" class="px-3 py-3 transition-colors hover:bg-slate-50/60">
+                                <div class="flex items-start justify-between gap-2 mb-2">
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-xs font-semibold text-slate-900 leading-snug">{{ $detail->service?->libelle_ar ?: '—' }}</p>
+                                        @if($detail->notes)
+                                            <p class="text-[10px] text-slate-500 mt-0.5 line-clamp-2">{{ $detail->notes }}</p>
+                                        @endif
+                                    </div>
+                                    <span class="inline-flex shrink-0 items-center rounded-lg px-2 py-0.5 text-[10px] font-medium {{ $badgeClass }}">
+                                        {{ $detail->statut_ligne_label }}
+                                    </span>
+                                </div>
+
+                                <div class="rounded-lg bg-slate-50/90 border border-slate-100 px-2.5 py-2 space-y-1.5">
+                                    <div class="flex items-center justify-between gap-2 text-[10px]">
+                                        <span class="text-slate-500">التسليم</span>
+                                        <span class="num-ltr font-semibold tabular-nums {{ $badgeDone ? 'text-emerald-700' : 'text-slate-800' }}">
+                                            {{ $qRendue }} <span class="text-slate-400 font-normal">/</span> {{ $qTot }}
+                                        </span>
+                                    </div>
+                                    <div class="h-2 rounded-full bg-slate-200/90 overflow-hidden" role="progressbar" aria-valuenow="{{ $pct }}" aria-valuemin="0" aria-valuemax="100">
+                                        <div
+                                            class="h-full rounded-full transition-all duration-300 {{ $badgeDone ? 'bg-emerald-500' : 'bg-sky-500' }}"
+                                            style="width: {{ $pct }}%"
+                                        ></div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-2.5 space-y-2">
+                                    @if($detail->statut_ligne === 'en_cours' && $qRendue < $qTot)
+                                        <button
+                                            type="button"
+                                            wire:click="marquerLignePret({{ $detail->id }})"
+                                            class="btn-success w-full !py-2.5 !text-[11px]"
+                                            wire:loading.attr="disabled"
+                                        >
+                                            <i class="fi fi-rr-check text-sm"></i>
+                                            <span>جاهز للتسليم</span>
+                                        </button>
+                                    @endif
+
+                                    @if($detail->statut_ligne === 'pret' && $restant > 0)
+                                        <div class="rounded-xl border border-slate-200/90 bg-white p-2.5 space-y-2 shadow-sm ring-1 ring-slate-900/[0.03]">
+                                            <label class="flex items-center justify-between gap-2 text-[10px] font-medium text-slate-600">
+                                                <span>كمية التسليم</span>
+                                                <span class="num-ltr rounded-md bg-amber-50 px-1.5 py-0.5 text-amber-800 tabular-nums ring-1 ring-amber-200/60">متبقي {{ $restant }}</span>
+                                            </label>
+                                            <div class="flex items-stretch gap-2">
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max="{{ $restant }}"
+                                                    inputmode="numeric"
+                                                    class="form-field min-w-0 flex-1 !h-10 !rounded-lg !text-sm !py-2 num-ltr text-center font-bold tabular-nums shadow-inner"
+                                                    wire:model.live="remisePartielle.{{ $detail->id }}"
+                                                >
+                                                <button
+                                                    type="button"
+                                                    wire:click="enregistrerRemiseLigne({{ $detail->id }})"
+                                                    class="btn-primary !h-10 shrink-0 !rounded-lg !px-4 !py-0 !text-[11px] shadow-md shadow-blue-900/15"
+                                                    wire:loading.attr="disabled"
+                                                >
+                                                    <i class="fi fi-rr-box-check text-sm"></i>
+                                                    <span>تسليم</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if($qRendue >= $qTot)
+                                        <div class="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-50/90 border border-emerald-100 py-2 text-[11px] font-medium text-emerald-800">
+                                            <span class="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white text-[10px]">✓</span>
+                                            مكتمل التسليم
+                                        </div>
+                                    @endif
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
                 </div>
 
-                {{-- Actions --}}
-                <div class="flex flex-wrap gap-1.5">
-                    @if((float) $commande->reste_a_payer > 0)
-                        <button wire:click="ouvrirPaiement" class="btn-primary flex-1" wire:loading.attr="disabled">
-                            <i class="fi fi-rr-coins mr-1"></i> تحصيل الباقي
-                        </button>
-                    @endif
-                    @if($commande->statut === 'en_cours')
-                        <button wire:click="confirmerChangementStatut({{ $commande->id }}, 'pret')" class="btn-secondary flex-1">
-                            <i class="fi fi-rr-check mr-1"></i> جاهز
-                        </button>
-                    @endif
-                    @if($commande->statut === 'pret')
-                        <button wire:click="confirmerChangementStatut({{ $commande->id }}, 'livre')" class="btn-primary flex-1">
-                            <i class="fi fi-rr-box-check mr-1"></i> مسلّم
-                        </button>
-                    @endif
-                    <a href="{{ route('commandes.ticket', $commande) }}" target="_blank" class="btn-secondary">
-                        <i class="fi fi-rr-print mr-1"></i> وصل
-                    </a>
-                    @hasanyrole(['gerant', 'المسير'])
-                        <button wire:click="demanderSuppressionCommande({{ $commande->id }})" class="btn-danger">
-                            <i class="fi fi-rr-trash mr-1"></i> حذف
-                        </button>
-                    @endhasanyrole
+                {{-- Actions commande --}}
+                <div class="rounded-xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/90 p-2.5 shadow-sm space-y-2">
+                    <div class="grid grid-cols-1 gap-2">
+                        @if((float) $commande->reste_a_payer > 0)
+                            <button type="button" wire:click="ouvrirPaiement" class="btn-primary w-full justify-center !py-2.5 shadow-md shadow-blue-900/20" wire:loading.attr="disabled">
+                                <i class="fi fi-rr-coins text-base opacity-90"></i>
+                                <span>تحصيل الباقي</span>
+                            </button>
+                        @endif
+                        @if($commande->statut === 'en_cours')
+                            <button type="button" wire:click="confirmerChangementStatut({{ $commande->id }}, 'pret')" class="btn-secondary w-full justify-center !py-2.5 border-sky-200/80 bg-sky-50/50 text-sky-950 hover:bg-sky-50">
+                                <i class="fi fi-rr-check text-sky-700 text-base"></i>
+                                <span>كل القطع جاهزة</span>
+                            </button>
+                        @endif
+                        @if($commande->statut === 'pret')
+                            @php
+                                $toutesLignesRemises = $commande->details->every(fn ($d) => (int) $d->quantite_rendue >= (int) $d->quantite);
+                            @endphp
+                            @if($toutesLignesRemises)
+                                <button type="button" wire:click="confirmerChangementStatut({{ $commande->id }}, 'livre')" class="btn-primary w-full justify-center !py-2.5 !bg-emerald-600 hover:!bg-emerald-700 shadow-md shadow-emerald-900/20">
+                                    <i class="fi fi-rr-box-check text-base"></i>
+                                    <span>إغلاق الطلب (مسلّم)</span>
+                                </button>
+                            @else
+                                <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-2.5 py-2 text-[10px] leading-relaxed text-slate-600">
+                                    سجّل تسليم القطع أعلاه؛ سيُغلق الطلب تلقائيًا عند اكتمال الكميات.
+                                </div>
+                            @endif
+                        @endif
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{{ route('commandes.ticket', $commande) }}" target="_blank" rel="noopener noreferrer" class="btn-secondary flex-1 min-w-[6rem] justify-center !py-2">
+                            <i class="fi fi-rr-print text-sm"></i>
+                            <span>وصل</span>
+                        </a>
+                        @hasanyrole(['gerant', 'المسير'])
+                            <button type="button" wire:click="demanderSuppressionCommande({{ $commande->id }})" class="btn-danger flex-1 min-w-[6rem] justify-center !py-2">
+                                <i class="fi fi-rr-trash text-sm"></i>
+                                <span>حذف</span>
+                            </button>
+                        @endhasanyrole
+                    </div>
                 </div>
             @else
                 <div class="card card-body flex flex-col items-center justify-center py-12 text-slate-300">
@@ -278,8 +401,8 @@
             <div class="modal-panel max-w-sm p-4 space-y-3">
                 <div class="flex items-center justify-between">
                     <h3 class="text-sm font-semibold text-slate-900">تحصيل المبلغ المتبقي</h3>
-                    <button wire:click="$set('afficherPaiement', false)" class="text-slate-400 hover:text-slate-600">
-                        <i class="fi fi-rr-cross-small text-sm"></i>
+                    <button type="button" wire:click="$set('afficherPaiement', false)" class="btn-ghost !h-9 !w-9 !p-0 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="إغلاق">
+                        <i class="fi fi-rr-cross-small text-base"></i>
                     </button>
                 </div>
 
@@ -322,9 +445,12 @@
                     </div>
                 </div>
 
-                <div class="flex justify-end gap-2 pt-1">
-                    <button wire:click="$set('afficherPaiement', false)" class="btn-secondary">إلغاء</button>
-                    <button wire:click="encaisserReste" class="btn-primary" wire:loading.attr="disabled">تأكيد الدفع</button>
+                <div class="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-1">
+                    <button type="button" wire:click="$set('afficherPaiement', false)" class="btn-secondary w-full sm:w-auto !py-2.5">إلغاء</button>
+                    <button type="button" wire:click="encaisserReste" class="btn-primary w-full sm:w-auto sm:min-w-[8rem] !py-2.5 shadow-lg shadow-blue-900/20" wire:loading.attr="disabled">
+                        <i class="fi fi-rr-coins text-sm opacity-90"></i>
+                        <span>تأكيد الدفع</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -339,14 +465,17 @@
                     @if($statutAConfirmer === 'pret')
                         هل تريد تحديد الطلب كـ <strong class="text-blue-700">جاهز</strong>؟
                     @elseif($statutAConfirmer === 'livre')
-                        هل تريد تحديد الطلب كـ <strong class="text-emerald-700">مسلّم</strong>؟
+                        هل تريد إغلاق الطلب كـ <strong class="text-emerald-700">مسلّم</strong>؟ يجب أن تكون كل القطع قد سُلّمت للزبون.
                     @else
                         هل تريد تغيير حالة الطلب؟
                     @endif
                 </p>
-                <div class="flex justify-end gap-2">
-                    <button wire:click="annulerConfirmationStatut" class="btn-secondary">إلغاء</button>
-                    <button wire:click="validerChangementStatut" class="btn-primary">تأكيد</button>
+                <div class="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-0.5">
+                    <button type="button" wire:click="annulerConfirmationStatut" class="btn-secondary w-full sm:w-auto !py-2.5">إلغاء</button>
+                    <button type="button" wire:click="validerChangementStatut" class="btn-primary w-full sm:w-auto !py-2.5 shadow-md shadow-blue-900/15">
+                        <i class="fi fi-rr-check text-sm"></i>
+                        <span>تأكيد</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -360,9 +489,12 @@
                 <p class="text-xs text-slate-600">
                     هل تريد حذف الطلب <strong class="num-ltr">{{ $numeroCommandeASupprimer }}</strong> نهائيًا؟
                 </p>
-                <div class="flex justify-end gap-2">
-                    <button wire:click="annulerSuppressionCommande" class="btn-secondary">إلغاء</button>
-                    <button wire:click="confirmerSuppressionCommande" class="btn-danger">حذف نهائي</button>
+                <div class="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-0.5">
+                    <button type="button" wire:click="annulerSuppressionCommande" class="btn-secondary w-full sm:w-auto !py-2.5">إلغاء</button>
+                    <button type="button" wire:click="confirmerSuppressionCommande" class="btn-danger w-full sm:w-auto !py-2.5 shadow-md shadow-red-900/20">
+                        <i class="fi fi-rr-trash text-sm"></i>
+                        <span>حذف نهائي</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -380,7 +512,10 @@
                             <span class="num-ltr">{{ $commandesARappeler->count() }}</span>&nbsp;طلب
                         </span>
                     </div>
-                    <button wire:click="fermerRappelsModal" class="btn-secondary">إغلاق</button>
+                    <button type="button" wire:click="fermerRappelsModal" class="btn-secondary shrink-0 !py-2 !px-3">
+                        <i class="fi fi-rr-cross-small text-sm"></i>
+                        <span>إغلاق</span>
+                    </button>
                 </div>
 
                 <div class="table-wrap max-h-[60vh] overflow-y-auto">
@@ -407,12 +542,14 @@
                                     </td>
                                     <td class="table-td text-right">
                                         <div class="inline-flex items-center gap-2">
-                                            <button wire:click="ouvrirCommandeDepuisRappel({{ $commandeRappel->id }})" class="btn-ghost !px-2.5 !py-1.5 !text-xs text-blue-700">
-                                                <i class="fi fi-rr-eye mr-1"></i> فتح
+                                            <button type="button" wire:click="ouvrirCommandeDepuisRappel({{ $commandeRappel->id }})" class="btn-secondary !border-blue-200/80 !bg-blue-50/80 !py-1.5 !px-2.5 !text-[11px] !text-blue-800 hover:!bg-blue-50">
+                                                <i class="fi fi-rr-eye text-sm"></i>
+                                                <span>فتح</span>
                                             </button>
                                             @if($commandeRappel->client?->telephone)
-                                                <a href="tel:{{ preg_replace('/\D+/', '', $commandeRappel->client->telephone) }}" class="btn-ghost !px-2.5 !py-1.5 !text-xs text-emerald-700">
-                                                    <i class="fi fi-rr-phone-call mr-1"></i> اتصال
+                                                <a href="tel:{{ preg_replace('/\D+/', '', $commandeRappel->client->telephone) }}" class="btn-secondary !border-emerald-200/80 !bg-emerald-50/80 !py-1.5 !px-2.5 !text-[11px] !text-emerald-900 hover:!bg-emerald-50">
+                                                    <i class="fi fi-rr-phone-call text-sm"></i>
+                                                    <span>اتصال</span>
                                                 </a>
                                             @endif
                                         </div>

@@ -142,4 +142,63 @@ class Commande extends Model
     {
         return (float) $this->montant_paye >= (float) $this->montant_total;
     }
+
+    /**
+     * Aligne commande.statut sur l’état des lignes (prêt partiel / toutes livrées).
+     */
+    public function synchroniserStatutAvecLignes(): void
+    {
+        $this->loadMissing('details');
+
+        if ($this->details->isEmpty()) {
+            return;
+        }
+
+        $toutLivre = $this->details->every(
+            fn (DetailCommande $d) => (int) $d->quantite_rendue >= (int) $d->quantite
+        );
+
+        if ($toutLivre) {
+            if ($this->statut !== 'livre') {
+                $this->update([
+                    'statut' => 'livre',
+                    'date_livraison_reelle' => $this->date_livraison_reelle ?? now(),
+                ]);
+            }
+
+            return;
+        }
+
+        $encoreEnTraitement = $this->details->contains(fn (DetailCommande $d) => $d->statut_ligne === 'en_cours');
+
+        if ($encoreEnTraitement) {
+            if ($this->statut !== 'en_cours') {
+                $updates = ['statut' => 'en_cours'];
+                if ($this->statut === 'livre') {
+                    $updates['date_livraison_reelle'] = null;
+                }
+                $this->update($updates);
+            }
+
+            return;
+        }
+
+        if ($this->statut !== 'pret') {
+            $updates = ['statut' => 'pret'];
+            if ($this->statut === 'livre') {
+                $updates['date_livraison_reelle'] = null;
+            }
+            $this->update($updates);
+        }
+    }
+
+    public function getRemisePartielleEnCoursAttribute(): bool
+    {
+        $this->loadMissing('details');
+
+        return $this->details->contains(
+            fn (DetailCommande $d) => (int) $d->quantite_rendue > 0
+                && (int) $d->quantite_rendue < (int) $d->quantite
+        );
+    }
 }

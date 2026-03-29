@@ -4,6 +4,7 @@ namespace App\Livewire\POS;
 
 use App\Models\CaisseOperation;
 use App\Models\Commande;
+use App\Models\DetailCommande;
 use App\Models\ModePaiement;
 use App\Support\LoyaltyPointsService;
 use Illuminate\Support\Facades\DB;
@@ -40,6 +41,9 @@ class RechercheCommande extends Component
 
     public string $messageSucces = '';
     public string $messageErreur = '';
+
+    /** @var array<int, string> quantité à remettre au client par ligne (detail id) */
+    public array $remisePartielle = [];
 
     public function mount(): void
     {
@@ -113,6 +117,19 @@ class RechercheCommande extends Component
         $this->montantAPayer = (float) $this->commande->reste_a_payer;
         $this->messageErreur = '';
         $this->messageSucces = '';
+        $this->initialiserRemisePartielle();
+    }
+
+    private function initialiserRemisePartielle(): void
+    {
+        $this->remisePartielle = [];
+        if (!$this->commande) {
+            return;
+        }
+        foreach ($this->commande->details as $d) {
+            $restant = max(0, (int) $d->quantite - (int) $d->quantite_rendue);
+            $this->remisePartielle[(int) $d->id] = $restant > 0 ? (string) $restant : '0';
+        }
     }
 
     public function ouvrirPaiement(): void
@@ -228,7 +245,7 @@ class RechercheCommande extends Component
 
     public function changerStatut(int $commandeId, string $nouveauStatut): void
     {
-        $commande = Commande::query()->forCurrentSuccursale()->findOrFail($commandeId);
+        $commande = Commande::query()->forCurrentSuccursale()->with('details')->findOrFail($commandeId);
         $transitionsAutorisees = $this->getTransitionsAutorisees();
 
         if (!in_array($nouveauStatut, $transitionsAutorisees[$commande->statut] ?? [], true)) {
@@ -237,13 +254,110 @@ class RechercheCommande extends Component
             return;
         }
 
-        $commande->update([
-            'statut' => $nouveauStatut,
-            'date_livraison_reelle' => $nouveauStatut === 'livre' ? now() : $commande->date_livraison_reelle,
-        ]);
+        if ($nouveauStatut === 'livre') {
+            $incomplet = $commande->details->contains(
+                fn (DetailCommande $d) => (int) $d->quantite_rendue < (int) $d->quantite
+            );
+            if ($incomplet) {
+                $this->messageErreur = 'لا يمكن إغلاق الطلب: سجّل تسليم كل القطع أولاً (أو أكمل الكميات المتبقية).';
+                $this->dispatch('notify', type: 'error', message: $this->messageErreur);
+                return;
+            }
+        }
+
+        DB::transaction(function () use ($commande, $nouveauStatut): void {
+            if ($nouveauStatut === 'pret') {
+                $commande->details()->where('statut_ligne', 'en_cours')->update(['statut_ligne' => 'pret']);
+            }
+
+            $commande->update([
+                'statut' => $nouveauStatut,
+                'date_livraison_reelle' => $nouveauStatut === 'livre' ? now() : $commande->date_livraison_reelle,
+            ]);
+        });
+
+        $commande->refresh();
+        $commande->synchroniserStatutAvecLignes();
 
         $this->messageSucces = 'تم تحديث حالة الطلب.';
         $this->dispatch('notify', type: 'success', message: $this->messageSucces);
+        if ($this->commandeSelectionneeId === $commande->id) {
+            $this->selectionnerCommande($commande->id);
+        }
+    }
+
+    public function marquerLignePret(int $detailId): void
+    {
+        $detail = DetailCommande::query()
+            ->whereKey($detailId)
+            ->with('commande')
+            ->firstOrFail();
+
+        $commande = $detail->commande;
+        if (!Commande::query()->forCurrentSuccursale()->whereKey($commande->id)->exists()) {
+            abort(403);
+        }
+
+        if ((int) $detail->quantite_rendue >= (int) $detail->quantite) {
+            return;
+        }
+
+        $detail->update(['statut_ligne' => 'pret']);
+        $commande->refresh();
+        $commande->load('details');
+        $commande->synchroniserStatutAvecLignes();
+
+        $this->messageSucces = 'تم تحديث حالة القطعة.';
+        $this->dispatch('notify', type: 'success', message: $this->messageSucces);
+
+        if ($this->commandeSelectionneeId === $commande->id) {
+            $this->selectionnerCommande($commande->id);
+        }
+    }
+
+    public function enregistrerRemiseLigne(int $detailId): void
+    {
+        $detail = DetailCommande::query()
+            ->whereKey($detailId)
+            ->with('commande')
+            ->firstOrFail();
+
+        $commande = $detail->commande;
+        if (!Commande::query()->forCurrentSuccursale()->whereKey($commande->id)->exists()) {
+            abort(403);
+        }
+
+        if ($detail->statut_ligne === 'en_cours') {
+            $this->messageErreur = 'القطعة ليست جاهزة بعد. عيّنها كـ «جاهزة» أولاً.';
+            $this->dispatch('notify', type: 'error', message: $this->messageErreur);
+            return;
+        }
+
+        $qty = (int) ($this->remisePartielle[$detailId] ?? 0);
+        $restant = max(0, (int) $detail->quantite - (int) $detail->quantite_rendue);
+
+        if ($qty < 1 || $qty > $restant) {
+            $this->messageErreur = 'كمية غير صالحة (المتبقي: ' . $restant . ').';
+            $this->dispatch('notify', type: 'error', message: $this->messageErreur);
+            return;
+        }
+
+        $nouveauRendu = (int) $detail->quantite_rendue + $qty;
+        $detail->quantite_rendue = min((int) $detail->quantite, $nouveauRendu);
+
+        if ((int) $detail->quantite_rendue >= (int) $detail->quantite) {
+            $detail->statut_ligne = 'livre';
+        }
+
+        $detail->save();
+
+        $commande->refresh();
+        $commande->load('details');
+        $commande->synchroniserStatutAvecLignes();
+
+        $this->messageSucces = 'تم تسجيل التسليم.';
+        $this->dispatch('notify', type: 'success', message: $this->messageSucces);
+
         if ($this->commandeSelectionneeId === $commande->id) {
             $this->selectionnerCommande($commande->id);
         }
@@ -382,13 +496,29 @@ class RechercheCommande extends Component
             return;
         }
 
-        // Mise a jour en lot robuste: toutes les commandes "en_cours" (et legacy en_attente)
-        // basculent vers "pret" en une seule operation.
-        $updated = (clone $baseQuery)
+        // Mise a jour en lot: lignes « en_cours » → « pret », puis commande → « pret ».
+        $idsCandidats = (clone $baseQuery)
             ->whereIn('statut', ['en_cours', 'en_attente'])
-            ->update([
-                'statut' => 'pret',
-            ]);
+            ->pluck('id');
+
+        $updated = 0;
+
+        if ($idsCandidats->isNotEmpty()) {
+            $updated = (int) DB::transaction(function () use ($idsCandidats): int {
+                DetailCommande::query()
+                    ->whereIn('fk_id_commande', $idsCandidats)
+                    ->where('statut_ligne', 'en_cours')
+                    ->update(['statut_ligne' => 'pret']);
+
+                return Commande::query()
+                    ->whereIn('id', $idsCandidats)
+                    ->update(['statut' => 'pret']);
+            });
+
+            foreach ($idsCandidats as $cid) {
+                Commande::query()->forCurrentSuccursale()->find($cid)?->synchroniserStatutAvecLignes();
+            }
+        }
 
         $ignored = max(0, $totalSelection - $updated);
 

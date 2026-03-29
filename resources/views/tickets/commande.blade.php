@@ -34,8 +34,12 @@
 <p><strong>رمز الزبون:</strong> <span class="num-ltr">{{ $commande->client?->code_client ?? '-' }}</span></p>
 <div class="line"></div>
 @foreach($commande->details as $detail)
+    @php
+        $qR = (int) ($detail->quantite_rendue ?? 0);
+        $qT = (int) $detail->quantite;
+    @endphp
     <div class="row">
-        <span>{{ $detail->service?->libelle_ar ?: '-' }} x{{ $detail->quantite }}</span>
+        <span>{{ $detail->service?->libelle_ar ?: '-' }} x{{ $detail->quantite }}@if($qT > 0 && $qR < $qT)<span class="muted"> (مسلّم {{ $qR }}/{{ $qT }})</span>@elseif($qR >= $qT && $qT > 0)<span class="muted"> ✓</span>@endif</span>
         <span class="num-ltr">{{ number_format((float) $detail->sous_total, 2, ',', ' ') }} MRU</span>
     </div>
 @endforeach

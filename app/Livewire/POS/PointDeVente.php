@@ -381,8 +381,10 @@ class PointDeVente extends Component
                     'fk_id_service' => $item['service_id'],
                     'prix_unitaire' => $item['prix'],
                     'quantite' => $item['quantite'],
+                    'quantite_rendue' => 0,
                     'sous_total' => $item['sous_total'],
                     'notes' => $item['notes'] ?: null,
+                    'statut_ligne' => 'en_cours',
                 ]);
             }
 
