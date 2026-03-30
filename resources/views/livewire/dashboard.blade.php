@@ -38,7 +38,7 @@
         </div>
     </div>
 
-    <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
         <div class="card card-body">
             <p class="text-sm text-slate-500 flex items-center gap-2"><i class="fi fi-rr-box-open text-blue-600"></i> طلبات اليوم</p>
             <p class="text-2xl font-bold mt-1 text-slate-900"><span class="num-ltr">{{ $stats['commandes_du_jour'] }}</span></p>
@@ -48,6 +48,16 @@
             <p class="text-sm text-slate-500 flex items-center gap-2"><i class="fi fi-rr-money-bill-wave text-emerald-600"></i> المبيعات المحصلة اليوم</p>
             <p class="text-2xl font-bold mt-1 text-emerald-700"><span class="num-ltr" dir="ltr">{{ number_format($stats['ca_jour'], 2, ',', ' ') }} MRU</span></p>
             <p class="text-xs text-slate-500 mt-1">مبالغ تم تحصيلها فعليًا</p>
+        </div>
+        <div class="card card-body border border-violet-100 bg-violet-50/40 shadow-sm ring-1 ring-violet-100/80">
+            <p class="text-sm text-violet-900/80 flex items-center gap-2 font-medium"><i class="fi fi-rr-receipt text-violet-600"></i> مستحقات غير محصّلة</p>
+            <p class="text-2xl font-bold mt-1 text-violet-800"><span class="num-ltr" dir="ltr">{{ number_format($stats['montants_factures_non_percus'], 2, ',', ' ') }} MRU</span></p>
+            <p class="text-xs text-violet-700/90 mt-1">
+                مجموع المتبقي على <span class="num-ltr font-semibold">{{ $stats['commandes_avec_reste'] }}</span> طلبًا (فوترة دون اكتمال الدفع)
+            </p>
+            <a href="{{ route('recherche') }}" wire:navigate class="mt-2 inline-block text-[11px] font-semibold text-violet-700 hover:text-violet-950 underline-offset-2 hover:underline">
+                متابعة التحصيل ←
+            </a>
         </div>
         <div class="card card-body">
             <p class="text-sm text-slate-500 flex items-center gap-2"><i class="fi fi-rr-hourglass-end text-amber-600"></i> قيد المعالجة</p>

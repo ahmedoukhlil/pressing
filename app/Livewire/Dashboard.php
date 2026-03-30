@@ -27,6 +27,16 @@ class Dashboard extends Component
             'en_cours' => Commande::query()->forCurrentSuccursale()->where('statut', 'en_cours')->count(),
             'pret' => Commande::query()->forCurrentSuccursale()->where('statut', 'pret')->count(),
             'ca_jour' => (float) Commande::query()->forCurrentSuccursale()->whereDate('date_depot', $today)->sum('montant_paye'),
+            'montants_factures_non_percus' => (float) Commande::query()
+                ->forCurrentSuccursale()
+                ->where('statut', '!=', 'annule')
+                ->where('reste_a_payer', '>', 0)
+                ->sum('reste_a_payer'),
+            'commandes_avec_reste' => Commande::query()
+                ->forCurrentSuccursale()
+                ->where('statut', '!=', 'annule')
+                ->where('reste_a_payer', '>', 0)
+                ->count(),
             'depenses_mois' => (float) Depense::query()
                 ->forCurrentSuccursale()
                 ->validee()

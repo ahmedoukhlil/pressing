@@ -20,7 +20,7 @@ class ExportController extends Controller
     private function resolveFinancesFiltres(Request $request): array
     {
         $validated = $request->validate([
-            'groupe_par' => ['nullable', 'in:jour,mois,annee'],
+            'groupe_par' => ['nullable', 'in:jour,semaine,mois,annee'],
             'annee' => ['nullable', 'integer', 'min:2000', 'max:2100'],
             'mois' => ['nullable', 'integer', 'min:1', 'max:12'],
         ]);
@@ -42,6 +42,10 @@ class ExportController extends Controller
             return 'سنة ' . $annee;
         }
 
+        if ($groupePar === 'semaine') {
+            return 'أسابيع ' . Carbon::createFromDate($annee, $mois, 1)->translatedFormat('F Y');
+        }
+
         return Carbon::createFromDate($annee, $mois, 1)->translatedFormat('F Y');
     }
 
@@ -50,7 +54,7 @@ class ExportController extends Controller
         $recettes = CaisseOperation::query()
             ->forCurrentSuccursale()
             ->select(['id', 'date_operation', 'designation', 'mode_paiement', 'montant_operation', 'fk_id_commande'])
-            ->when($groupePar === 'jour', fn ($q) => $q
+            ->when(in_array($groupePar, ['jour', 'semaine'], true), fn ($q) => $q
                 ->whereYear('date_operation', $annee)
                 ->whereMonth('date_operation', $mois))
             ->when($groupePar === 'mois', fn ($q) => $q
@@ -73,7 +77,7 @@ class ExportController extends Controller
             ->forCurrentSuccursale()
             ->where('statut', 'validee')
             ->select(['id', 'date_depense', 'designation', 'mode_paiement', 'montant', 'reference'])
-            ->when($groupePar === 'jour', fn ($q) => $q
+            ->when(in_array($groupePar, ['jour', 'semaine'], true), fn ($q) => $q
                 ->whereYear('date_depense', $annee)
                 ->whereMonth('date_depense', $mois))
             ->when($groupePar === 'mois', fn ($q) => $q
