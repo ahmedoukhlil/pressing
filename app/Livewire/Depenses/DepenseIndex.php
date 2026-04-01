@@ -156,7 +156,9 @@ class DepenseIndex extends Component
 
         $data = [
             'fk_id_succursale' => SuccursaleContext::currentIdForWrite(),
-            'date_depense' => $this->dateDepense,
+            'date_depense' => now()->toDateString() === $this->dateDepense
+                ? now()->toDateTimeString()
+                : $this->dateDepense . ' ' . now()->format('H:i:s'),
             'fk_id_type_depense' => $this->fkIdTypeDepense,
             'designation' => $this->designation,
             'montant' => $this->montant,
