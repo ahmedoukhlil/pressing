@@ -231,17 +231,8 @@
     @endif
 
     {{-- Tableau --}}
-    <div class="table-wrap">
-        <table class="table-base w-full table-fixed text-sm">
-            <colgroup>
-                <col class="w-[17%]">
-                <col class="w-[12%]">
-                <col class="w-[12%]">
-                <col class="w-[12%]">
-                <col class="w-[13%]">
-                <col class="w-[14%]">
-                <col class="w-[10%]">
-            </colgroup>
+    <div class="table-wrap overflow-x-auto">
+        <table class="table-base w-full text-sm min-w-[700px]">
             <thead class="table-head">
                 <tr class="border-b border-slate-200">
                     <th class="table-th !text-right border-slate-200 border-l whitespace-nowrap text-[11px]">الفترة</th>
@@ -366,16 +357,8 @@
         </div>
         <p class="text-xs text-slate-500">يعرض هذا الجدول كل عملية على حدة حسب الفترة المختارة أعلاه (يومي / أسبوعي / شهري / سنوي). عمود «مستحقات» يخصّص المتبقي غير المحصّل حسب تاريخ إيداع الطلب داخل كل سطر فترة.</p>
 
-        <div class="table-wrap">
-            <table class="table-base w-full table-fixed text-sm">
-                <colgroup>
-                    <col class="w-[16%]">
-                    <col class="w-[12%]">
-                    <col class="w-[34%]">
-                    <col class="w-[14%]">
-                    <col class="w-[12%]">
-                    <col class="w-[12%]">
-                </colgroup>
+        <div class="table-wrap overflow-x-auto">
+            <table class="table-base w-full text-sm min-w-[650px]">
                 <thead class="table-head">
                     <tr class="border-b border-slate-200">
                         <th class="table-th !text-right border-slate-200 border-l whitespace-nowrap text-[11px]">التاريخ</th>
