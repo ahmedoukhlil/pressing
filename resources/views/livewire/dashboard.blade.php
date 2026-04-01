@@ -78,15 +78,22 @@
                 <h2 class="card-title mb-0">الإيرادات اليومية</h2>
                 <p class="text-xs text-slate-400 mt-0.5">تفاصيل كل عملية تحصيل حسب اليوم المختار</p>
             </div>
-            <div class="flex flex-wrap items-center gap-3">
-                <input type="date" wire:model.live="dateRecettes"
-                    class="form-field w-auto"
-                    max="{{ now()->toDateString() }}">
-                <div class="text-right">
-                    <p class="text-xs text-slate-500">إجمالي اليوم</p>
-                    <p class="text-lg font-bold text-emerald-700 num-ltr">{{ number_format($totalRecettesJour, 2, ',', ' ') }} MRU</p>
-                </div>
+            <div class="text-right">
+                <p class="text-xs text-slate-500">إجمالي{{ $filtreMode ? ' (مفلتر)' : '' }}</p>
+                <p class="text-lg font-bold text-emerald-700 num-ltr">{{ number_format($totalRecettesJour, 2, ',', ' ') }} MRU</p>
             </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <input type="date" wire:model.live="dateRecettes"
+                class="form-field w-auto"
+                max="{{ now()->toDateString() }}">
+            <select wire:model.live="filtreMode" class="form-field w-auto min-w-[160px]">
+                <option value="">كل طرق الدفع</option>
+                @foreach($modesPaiement as $mode)
+                    <option value="{{ $mode->code }}">{{ $mode->libelle }}</option>
+                @endforeach
+            </select>
         </div>
 
         <div class="overflow-x-auto">
@@ -148,6 +155,10 @@
                 @endif
             </table>
         </div>
+
+        @if($recettesJour->hasPages())
+            <div class="mt-2">{{ $recettesJour->links() }}</div>
+        @endif
     </div>
 
     <div class="grid md:grid-cols-3 gap-4" x-show="!simpleMode" x-transition>

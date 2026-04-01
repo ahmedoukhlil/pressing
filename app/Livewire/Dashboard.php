@@ -9,14 +9,28 @@ use App\Models\Depense;
 use App\Models\ModePaiement;
 use Carbon\Carbon;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class Dashboard extends Component
 {
+    use WithPagination;
+
     public string $dateRecettes = '';
+    public string $filtreMode = '';
 
     public function mount(): void
     {
         $this->dateRecettes = now()->toDateString();
+    }
+
+    public function updatingDateRecettes(): void
+    {
+        $this->resetPage('recettesPage');
+    }
+
+    public function updatingFiltreMode(): void
+    {
+        $this->resetPage('recettesPage');
     }
 
     public function render()
@@ -57,14 +71,20 @@ class Dashboard extends Component
 
         // Recettes journalières détaillées
         $libelles = ModePaiement::query()->pluck('libelle', 'code');
+        $modesPaiement = ModePaiement::query()->orderBy('libelle')->get();
 
-        $recettesJour = CaisseOperation::query()
+        $recettesQuery = CaisseOperation::query()
             ->forCurrentSuccursale()
-            ->with(['client', 'commande'])
             ->whereDate('date_operation', $dateSelectionnee)
-            ->orderBy('date_operation')
-            ->get()
-            ->map(fn ($op) => [
+            ->when($this->filtreMode !== '', fn ($q) => $q->where('mode_paiement', $this->filtreMode))
+            ->orderByDesc('date_operation');
+
+        $totalRecettesJour = (float) (clone $recettesQuery)->sum('montant_operation');
+
+        $recettesJour = $recettesQuery
+            ->with(['client', 'commande'])
+            ->paginate(15, ['*'], 'recettesPage')
+            ->through(fn ($op) => [
                 'heure'           => Carbon::parse($op->date_operation)->format('H:i'),
                 'client_nom'      => $op->client?->full_name ?? '-',
                 'client_tel'      => $op->client?->telephone ?? '',
@@ -72,8 +92,6 @@ class Dashboard extends Component
                 'montant'         => (float) $op->montant_operation,
                 'mode_paiement'   => $op->mode_paiement ? ($libelles[$op->mode_paiement] ?? $op->mode_paiement) : '-',
             ]);
-
-        $totalRecettesJour = $recettesJour->sum('montant');
 
         $commandesProchesEcheance = (clone $commandesNonLivrees)
             ->where('date_depot', '>', $now->copy()->subDays(7))
@@ -98,7 +116,7 @@ class Dashboard extends Component
 
         return view('livewire.dashboard', compact(
             'stats', 'commandesProchesEcheance', 'commandesHorsDelai',
-            'recettesJour', 'totalRecettesJour', 'dateSelectionnee'
+            'recettesJour', 'totalRecettesJour', 'dateSelectionnee', 'modesPaiement'
         ))->layout('layouts.app');
     }
 }
