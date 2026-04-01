@@ -71,38 +71,83 @@
         </div>
     </div>
 
-    {{-- Recettes du mois ventilées par mode de paiement --}}
-    <div class="card card-body">
-        <div class="flex items-center justify-between mb-3">
+    {{-- Recettes journalières --}}
+    <div class="card card-body space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h2 class="card-title mb-0">إيرادات الشهر حسب طريقة الدفع</h2>
-                <p class="text-xs text-slate-400 mt-0.5">{{ now()->translatedFormat('F Y') }}</p>
+                <h2 class="card-title mb-0">الإيرادات اليومية</h2>
+                <p class="text-xs text-slate-400 mt-0.5">تفاصيل كل عملية تحصيل حسب اليوم المختار</p>
             </div>
-            <div class="text-right">
-                <p class="text-xs text-slate-500">الإجمالي</p>
-                <p class="text-lg font-bold text-emerald-700 num-ltr">{{ number_format($totalRecettesMois, 2, ',', ' ') }} MRU</p>
+            <div class="flex flex-wrap items-center gap-3">
+                <input type="date" wire:model.live="dateRecettes"
+                    class="form-field w-auto"
+                    max="{{ now()->toDateString() }}">
+                <div class="text-right">
+                    <p class="text-xs text-slate-500">إجمالي اليوم</p>
+                    <p class="text-lg font-bold text-emerald-700 num-ltr">{{ number_format($totalRecettesJour, 2, ',', ' ') }} MRU</p>
+                </div>
             </div>
         </div>
-        @if($recettesParMode->isEmpty())
-            <p class="text-sm text-slate-400 text-center py-4">لا توجد إيرادات مسجلة هذا الشهر.</p>
-        @else
-            <div class="space-y-2.5">
-                @foreach($recettesParMode as $item)
-                    @php
-                        $pct = $totalRecettesMois > 0 ? round(($item['total'] / $totalRecettesMois) * 100, 1) : 0;
-                    @endphp
-                    <div>
-                        <div class="flex items-center justify-between text-sm mb-1">
-                            <span class="font-medium text-slate-700">{{ $item['libelle'] }}</span>
-                            <span class="num-ltr text-slate-600 tabular-nums">{{ number_format($item['total'], 2, ',', ' ') }} MRU <span class="text-xs text-slate-400">({{ $pct }}%)</span></span>
-                        </div>
-                        <div class="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                            <div class="h-full rounded-full bg-emerald-500 transition-all" style="width: {{ $pct }}%"></div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        @endif
+
+        <div class="overflow-x-auto">
+            <table class="table-base w-full text-sm min-w-[600px]">
+                <thead class="table-head">
+                    <tr>
+                        <th class="table-th !text-right border-l border-slate-200 text-[11px] whitespace-nowrap">الساعة</th>
+                        <th class="table-th !text-right border-l border-slate-200 text-[11px] whitespace-nowrap">الزبون</th>
+                        <th class="table-th !text-center border-l border-slate-200 text-[11px] whitespace-nowrap">رقم الطلب</th>
+                        <th class="table-th !text-left border-l border-slate-200 text-[11px] whitespace-nowrap">المبلغ (MRU)</th>
+                        <th class="table-th !text-center text-[11px] whitespace-nowrap">طريقة الدفع</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($recettesJour as $r)
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="table-td !text-right border-l border-slate-100 whitespace-nowrap num-ltr font-medium">
+                                {{ $r['heure'] }}
+                            </td>
+                            <td class="table-td !text-right border-l border-slate-100">
+                                <div class="font-medium text-slate-800">{{ $r['client_nom'] }}</div>
+                                @if($r['client_tel'])
+                                    <div class="text-[11px] text-slate-400 num-ltr">{{ $r['client_tel'] }}</div>
+                                @endif
+                            </td>
+                            <td class="table-td !text-center border-l border-slate-100 whitespace-nowrap">
+                                <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700 num-ltr">
+                                    {{ $r['numero_commande'] }}
+                                </span>
+                            </td>
+                            <td class="table-td !text-left border-l border-slate-100 whitespace-nowrap text-emerald-700 font-semibold num-ltr tabular-nums">
+                                {{ number_format($r['montant'], 2, ',', ' ') }}
+                            </td>
+                            <td class="table-td !text-center whitespace-nowrap">
+                                <span class="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
+                                    {{ $r['mode_paiement'] }}
+                                </span>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="table-td py-10 text-center text-slate-400">
+                                <i class="fi fi-rr-folder-open text-2xl block mb-2"></i>
+                                لا توجد إيرادات في هذا اليوم.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                @if($recettesJour->isNotEmpty())
+                    <tfoot class="bg-slate-50 border-t-2 border-slate-200">
+                        <tr>
+                            <td colspan="3" class="table-td !text-right font-bold text-slate-700 border-l border-slate-200">المجموع</td>
+                            <td class="table-td !text-left font-bold text-emerald-700 border-l border-slate-200 num-ltr tabular-nums">
+                                {{ number_format($totalRecettesJour, 2, ',', ' ') }}
+                            </td>
+                            <td class="table-td"></td>
+                        </tr>
+                    </tfoot>
+                @endif
+            </table>
+        </div>
     </div>
 
     <div class="grid md:grid-cols-3 gap-4" x-show="!simpleMode" x-transition>
