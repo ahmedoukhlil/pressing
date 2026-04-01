@@ -122,6 +122,43 @@
         </div>
     </div>
 
+    {{-- Ventilation recettes par mode de paiement --}}
+    <div class="card card-body">
+        <div class="flex items-center justify-between mb-3">
+            <div>
+                <h2 class="text-sm font-semibold text-slate-800">الإيرادات حسب طريقة الدفع</h2>
+                <p class="text-xs text-slate-400 mt-0.5">{{ $this->periode_selectionnee_label }}</p>
+            </div>
+            <div class="text-right">
+                <p class="text-xs text-slate-500">إجمالي الإيرادات</p>
+                <p class="text-base font-bold text-emerald-700 num-ltr">{{ number_format($this->total_recettes, 2, ',', ' ') }} MRU</p>
+            </div>
+        </div>
+        @if($this->recettes_par_mode->isEmpty())
+            <p class="text-sm text-slate-400 text-center py-4">لا توجد إيرادات في هذه الفترة.</p>
+        @else
+            <div class="space-y-2.5">
+                @foreach($this->recettes_par_mode as $item)
+                    @php
+                        $pct = $this->total_recettes > 0 ? round(($item['total'] / $this->total_recettes) * 100, 1) : 0;
+                    @endphp
+                    <div>
+                        <div class="flex items-center justify-between text-sm mb-1">
+                            <span class="font-medium text-slate-700">{{ $item['libelle'] }}</span>
+                            <span class="num-ltr text-slate-600 tabular-nums">
+                                {{ number_format($item['total'], 2, ',', ' ') }} MRU
+                                <span class="text-xs text-slate-400">({{ $pct }}%)</span>
+                            </span>
+                        </div>
+                        <div class="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                            <div class="h-full rounded-full bg-emerald-500 transition-all" style="width: {{ $pct }}%"></div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </div>
+
     {{-- Tableau --}}
     <div class="table-wrap">
         <table class="table-base w-full table-fixed text-sm">

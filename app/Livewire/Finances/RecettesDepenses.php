@@ -106,6 +106,32 @@ class RecettesDepenses extends Component
         return $this->lignes->count();
     }
 
+    public function getRecettesParModeProperty(): Collection
+    {
+        $libelles = ModePaiement::query()->pluck('libelle', 'code');
+
+        $query = CaisseOperation::query()
+            ->forCurrentSuccursale()
+            ->selectRaw('mode_paiement, SUM(montant_operation) as total')
+            ->when(in_array($this->groupePar, ['jour', 'semaine'], true), fn ($q) => $q
+                ->whereYear('date_operation', $this->annee)
+                ->whereMonth('date_operation', $this->mois))
+            ->when($this->groupePar === 'mois', fn ($q) => $q
+                ->whereYear('date_operation', $this->annee))
+            ->when($this->groupePar === 'annee', fn ($q) => $q
+                ->whereYear('date_operation', $this->annee))
+            ->groupBy('mode_paiement')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($row) => [
+                'code'    => $row->mode_paiement,
+                'libelle' => $row->mode_paiement ? ($libelles[$row->mode_paiement] ?? $row->mode_paiement) : '-',
+                'total'   => (float) $row->total,
+            ]);
+
+        return $query;
+    }
+
     public function getOperationsProperty(): Collection
     {
         $libelles = ModePaiement::query()->pluck('libelle', 'code');
