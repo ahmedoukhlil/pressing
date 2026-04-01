@@ -16,6 +16,8 @@ class RecettesDepenses extends Component
     public string $groupePar = 'mois'; // jour | semaine | mois | annee
     public int $annee;
     public int $mois;
+    public ?string $modeSelectionne = null;
+    public bool $afficherDetailMode = false;
 
     public function mount(): void
     {
@@ -34,6 +36,70 @@ class RecettesDepenses extends Component
     {
         $this->annee = now()->year;
         $this->mois = now()->month;
+    }
+
+    public function ouvrirDetailMode(string $code): void
+    {
+        $this->modeSelectionne = $code;
+        $this->afficherDetailMode = true;
+    }
+
+    public function fermerDetailMode(): void
+    {
+        $this->modeSelectionne = null;
+        $this->afficherDetailMode = false;
+    }
+
+    public function getOperationsParModeProperty(): Collection
+    {
+        if (!$this->modeSelectionne) {
+            return collect();
+        }
+
+        $libelles = ModePaiement::query()->pluck('libelle', 'code');
+
+        $recettes = CaisseOperation::query()
+            ->forCurrentSuccursale()
+            ->where('mode_paiement', $this->modeSelectionne)
+            ->select(['id', 'date_operation', 'designation', 'montant_operation', 'fk_id_commande'])
+            ->when(in_array($this->groupePar, ['jour', 'semaine'], true), fn ($q) => $q
+                ->whereYear('date_operation', $this->annee)
+                ->whereMonth('date_operation', $this->mois))
+            ->when($this->groupePar === 'mois', fn ($q) => $q
+                ->whereYear('date_operation', $this->annee))
+            ->when($this->groupePar === 'annee', fn ($q) => $q
+                ->whereYear('date_operation', $this->annee))
+            ->orderByDesc('date_operation')
+            ->get()
+            ->map(fn ($op) => [
+                'date'        => Carbon::parse($op->date_operation)->format('Y-m-d H:i'),
+                'designation' => $op->designation ?: ('تحصيل طلب #' . ($op->fk_id_commande ?? '-')),
+                'montant'     => (float) $op->montant_operation,
+                'type'        => 'recette',
+            ]);
+
+        $depenses = Depense::query()
+            ->forCurrentSuccursale()
+            ->where('statut', 'validee')
+            ->where('mode_paiement', $this->modeSelectionne)
+            ->select(['id', 'date_depense', 'designation', 'montant', 'reference'])
+            ->when(in_array($this->groupePar, ['jour', 'semaine'], true), fn ($q) => $q
+                ->whereYear('date_depense', $this->annee)
+                ->whereMonth('date_depense', $this->mois))
+            ->when($this->groupePar === 'mois', fn ($q) => $q
+                ->whereYear('date_depense', $this->annee))
+            ->when($this->groupePar === 'annee', fn ($q) => $q
+                ->whereYear('date_depense', $this->annee))
+            ->orderByDesc('date_depense')
+            ->get()
+            ->map(fn ($d) => [
+                'date'        => Carbon::parse($d->date_depense)->format('Y-m-d H:i'),
+                'designation' => ($d->designation ?: 'مصروف') . ($d->reference ? ' - ' . $d->reference : ''),
+                'montant'     => (float) $d->montant,
+                'type'        => 'depense',
+            ]);
+
+        return $recettes->merge($depenses)->sortByDesc('date')->values();
     }
 
     /* ─── Computed helpers ─────────────────────────────────────── */

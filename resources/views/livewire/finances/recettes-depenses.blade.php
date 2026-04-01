@@ -124,10 +124,10 @@
 
     {{-- Ventilation recettes par mode de paiement --}}
     <div class="card card-body">
-        <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center justify-between mb-4">
             <div>
                 <h2 class="text-sm font-semibold text-slate-800">الإيرادات حسب طريقة الدفع</h2>
-                <p class="text-xs text-slate-400 mt-0.5">{{ $this->periode_selectionnee_label }}</p>
+                <p class="text-xs text-slate-400 mt-0.5">{{ $this->periode_selectionnee_label }} · انقر على بطاقة لعرض التفاصيل</p>
             </div>
             <div class="text-right">
                 <p class="text-xs text-slate-500">إجمالي الإيرادات</p>
@@ -137,27 +137,98 @@
         @if($this->recettes_par_mode->isEmpty())
             <p class="text-sm text-slate-400 text-center py-4">لا توجد إيرادات في هذه الفترة.</p>
         @else
-            <div class="space-y-2.5">
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 @foreach($this->recettes_par_mode as $item)
                     @php
                         $pct = $this->total_recettes > 0 ? round(($item['total'] / $this->total_recettes) * 100, 1) : 0;
                     @endphp
-                    <div>
-                        <div class="flex items-center justify-between text-sm mb-1">
-                            <span class="font-medium text-slate-700">{{ $item['libelle'] }}</span>
-                            <span class="num-ltr text-slate-600 tabular-nums">
-                                {{ number_format($item['total'], 2, ',', ' ') }} MRU
-                                <span class="text-xs text-slate-400">({{ $pct }}%)</span>
-                            </span>
+                    <button type="button"
+                        wire:click="ouvrirDetailMode('{{ $item['code'] }}')"
+                        class="group text-right rounded-xl border border-slate-200 bg-white hover:border-emerald-400 hover:shadow-md hover:bg-emerald-50/30 transition-all p-4 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-500 group-hover:text-emerald-700 transition">{{ $item['libelle'] }}</span>
+                            <span class="text-xs text-slate-400 num-ltr">{{ $pct }}%</span>
                         </div>
-                        <div class="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                        <p class="text-xl font-bold text-slate-800 num-ltr tabular-nums">{{ number_format($item['total'], 2, ',', ' ') }}</p>
+                        <p class="text-[10px] text-slate-400">MRU</p>
+                        <div class="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
                             <div class="h-full rounded-full bg-emerald-500 transition-all" style="width: {{ $pct }}%"></div>
                         </div>
-                    </div>
+                        <p class="text-[10px] text-emerald-600 opacity-0 group-hover:opacity-100 transition">عرض التفاصيل ←</p>
+                    </button>
                 @endforeach
             </div>
         @endif
     </div>
+
+    {{-- Modale détail mode de paiement --}}
+    @if($afficherDetailMode && $modeSelectionne)
+        @php
+            $modeLabel = $this->recettes_par_mode->firstWhere('code', $modeSelectionne)['libelle'] ?? $modeSelectionne;
+            $ops = $this->operations_par_mode;
+            $totalRecetteMode = $ops->where('type', 'recette')->sum('montant');
+            $totalDepenseMode = $ops->where('type', 'depense')->sum('montant');
+        @endphp
+        <div class="modal-overlay flex items-center justify-center p-4">
+            <div class="modal-panel max-w-2xl w-full p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-base font-semibold text-slate-900">تفاصيل طريقة الدفع: {{ $modeLabel }}</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">{{ $this->periode_selectionnee_label }}</p>
+                    </div>
+                    <button wire:click="fermerDetailMode" class="btn-secondary">إغلاق</button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2">
+                        <p class="text-[11px] text-emerald-700">إجمالي الإيرادات</p>
+                        <p class="font-bold text-emerald-800 num-ltr">{{ number_format($totalRecetteMode, 2, ',', ' ') }} MRU</p>
+                    </div>
+                    <div class="rounded-lg bg-red-50 border border-red-200 px-3 py-2">
+                        <p class="text-[11px] text-red-700">إجمالي المصروفات</p>
+                        <p class="font-bold text-red-800 num-ltr">{{ number_format($totalDepenseMode, 2, ',', ' ') }} MRU</p>
+                    </div>
+                </div>
+
+                <div class="table-wrap max-h-96 overflow-y-auto">
+                    <table class="table-base w-full text-sm">
+                        <thead class="table-head sticky top-0">
+                            <tr>
+                                <th class="table-th !text-right border-l border-slate-200 text-[11px]">التاريخ</th>
+                                <th class="table-th !text-center border-l border-slate-200 text-[11px]">النوع</th>
+                                <th class="table-th !text-right border-l border-slate-200 text-[11px]">البيان</th>
+                                <th class="table-th !text-left text-[11px]">المبلغ (MRU)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($ops as $op)
+                                <tr class="hover:bg-slate-50">
+                                    <td class="table-td !text-right border-l border-slate-100 whitespace-nowrap text-xs">{{ $op['date'] }}</td>
+                                    <td class="table-td !text-center border-l border-slate-100 whitespace-nowrap">
+                                        @if($op['type'] === 'recette')
+                                            <span class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">إيراد</span>
+                                        @else
+                                            <span class="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-600">مصروف</span>
+                                        @endif
+                                    </td>
+                                    <td class="table-td !text-right border-l border-slate-100 max-w-[200px]">
+                                        <div class="truncate text-xs" title="{{ $op['designation'] }}">{{ $op['designation'] }}</div>
+                                    </td>
+                                    <td class="table-td !text-left whitespace-nowrap num-ltr tabular-nums {{ $op['type'] === 'recette' ? 'text-emerald-700' : 'text-red-600' }}">
+                                        {{ number_format($op['montant'], 2, ',', ' ') }}
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="table-td text-center text-slate-400 py-6">لا توجد عمليات.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    @endif
 
     {{-- Tableau --}}
     <div class="table-wrap">
