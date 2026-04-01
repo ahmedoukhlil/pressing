@@ -5,6 +5,7 @@ namespace App\Livewire\Finances;
 use App\Models\CaisseOperation;
 use App\Models\Commande;
 use App\Models\Depense;
+use App\Models\ModePaiement;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -107,6 +108,8 @@ class RecettesDepenses extends Component
 
     public function getOperationsProperty(): Collection
     {
+        $libelles = ModePaiement::query()->pluck('libelle', 'code');
+
         $recettes = CaisseOperation::query()
             ->forCurrentSuccursale()
             ->select(['id', 'date_operation', 'designation', 'mode_paiement', 'montant_operation', 'fk_id_commande'])
@@ -120,13 +123,14 @@ class RecettesDepenses extends Component
             ->orderByDesc('date_operation')
             ->limit(500)
             ->get()
-            ->map(function (CaisseOperation $operation): array {
+            ->map(function (CaisseOperation $operation) use ($libelles): array {
+                $code = $operation->mode_paiement;
                 return [
                     'date' => Carbon::parse($operation->date_operation),
                     'type' => 'recette',
                     'type_label' => 'إيراد',
                     'designation' => $operation->designation ?: ('تحصيل طلب #' . ($operation->fk_id_commande ?? '-')),
-                    'mode_paiement' => $operation->mode_paiement ?: '-',
+                    'mode_paiement' => $code ? ($libelles[$code] ?? $code) : '-',
                     'recette' => (float) $operation->montant_operation,
                     'depense' => 0.0,
                 ];
@@ -143,15 +147,16 @@ class RecettesDepenses extends Component
                 ->whereYear('date_depense', $this->annee))
             ->orderByDesc('date_depense')
             ->get()
-            ->map(function (Depense $depense): array {
+            ->map(function (Depense $depense) use ($libelles): array {
                 $reference = $depense->reference ? (' - ' . $depense->reference) : '';
+                $code = $depense->mode_paiement;
 
                 return [
                     'date' => Carbon::parse($depense->date_depense),
                     'type' => 'depense',
                     'type_label' => 'مصروف',
                     'designation' => ($depense->designation ?: 'مصروف') . $reference,
-                    'mode_paiement' => $depense->mode_paiement ?: '-',
+                    'mode_paiement' => $code ? ($libelles[$code] ?? $code) : '-',
                     'recette' => 0.0,
                     'depense' => (float) $depense->montant,
                 ];
