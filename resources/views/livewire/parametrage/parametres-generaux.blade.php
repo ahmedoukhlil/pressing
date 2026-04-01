@@ -1,7 +1,7 @@
 <div class="page-container space-y-4 text-right" dir="rtl">
     <div class="page-header">
         <div>
-            <h1 class="page-title">نظام نقاط الولاء</h1>
+            <h1 class="page-title">نظام نقاط الزبناء</h1>
             <p class="page-subtitle">تحكم في طريقة احتساب النقاط وتحويلها إلى خصم بشكل واضح وسريع.</p>
         </div>
         <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $pointsEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600' }}">

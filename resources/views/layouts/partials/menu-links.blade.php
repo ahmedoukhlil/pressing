@@ -10,7 +10,7 @@
 
     $parametrageLinks = [
         ['route' => 'services.index', 'match' => 'services.*', 'label' => 'الخدمات', 'icon' => 'services', 'permission' => 'view.services.index'],
-        ['route' => 'parametrage.fidelite', 'match' => 'parametrage.fidelite', 'label' => 'نظام نقاط الولاء', 'icon' => 'settings', 'permission' => 'view.parametrage.parametres-generaux'],
+        ['route' => 'parametrage.fidelite', 'match' => 'parametrage.fidelite', 'label' => 'نظام نقاط الزبناء', 'icon' => 'settings', 'permission' => 'view.parametrage.parametres-generaux'],
         ['route' => 'parametrage.stock-consommables.index', 'match' => 'parametrage.stock-consommables.*', 'label' => 'المخزون', 'icon' => 'stock', 'permission' => 'view.parametrage.stock-consommables.index'],
         ['route' => 'parametrage.employes.index', 'match' => 'parametrage.employes.*', 'label' => 'الموظفون', 'icon' => 'employes', 'permission' => 'view.parametrage.employes.index'],
         ['route' => 'parametrage.modes-paiement.index', 'match' => 'parametrage.modes-paiement.*', 'label' => 'طرق الدفع', 'icon' => 'modes', 'permission' => 'view.parametrage.modes-paiement.index'],

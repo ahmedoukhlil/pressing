@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Parametrage\Employes;
 
+use App\Models\AvanceSalaire;
 use App\Models\Depense;
 use App\Models\Employe;
 use App\Support\SuccursaleContext;
@@ -15,6 +16,8 @@ class EmployeIndex extends Component
     public string $search = '';
     public ?int $employeDepensesId = null;
     public bool $afficherDepensesModal = false;
+    public bool $afficherSuppressionModal = false;
+    public ?int $employeASupprImerId = null;
     private const TYPE_SALAIRES_LABEL = 'الرواتب';
     private const TYPE_TRANSPORT_LABEL = 'النقل';
 
@@ -33,6 +36,30 @@ class EmployeIndex extends Component
     {
         $this->employeDepensesId = null;
         $this->afficherDepensesModal = false;
+    }
+
+    public function confirmerSuppression(int $employeId): void
+    {
+        $this->employeASupprImerId = $employeId;
+        $this->afficherSuppressionModal = true;
+    }
+
+    public function annulerSuppression(): void
+    {
+        $this->employeASupprImerId = null;
+        $this->afficherSuppressionModal = false;
+    }
+
+    public function supprimerEmploye(): void
+    {
+        $employe = Employe::query()->findOrFail($this->employeASupprImerId);
+
+        AvanceSalaire::query()->where('fk_id_employe', $employe->id)->delete();
+        Depense::query()->where('fk_id_employe', $employe->id)->delete();
+
+        $employe->delete();
+        $this->annulerSuppression();
+        $this->dispatch('notify', type: 'success', message: 'تم حذف الموظف بنجاح.');
     }
 
     public function render()
@@ -96,8 +123,11 @@ class EmployeIndex extends Component
             }
         }
 
+        $employeASupprimer = $this->employeASupprImerId ? Employe::query()->find($this->employeASupprImerId) : null;
+
         return view('livewire.parametrage.employes.employe-index', [
             'employes' => $employes,
+            'employeASupprimer' => $employeASupprimer,
             'statsEmployes' => [
                 'count' => Employe::query()->count(),
                 'salaires' => (float) (clone $depensesEmployesBase)->whereHas('typeDepense', fn ($q) => $q->where('libelle', self::TYPE_SALAIRES_LABEL))->sum('montant'),

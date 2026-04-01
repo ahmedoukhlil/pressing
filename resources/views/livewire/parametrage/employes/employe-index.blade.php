@@ -60,6 +60,10 @@
                                 <a href="{{ route('parametrage.employes.paiement', $e->id) }}" wire:navigate class="btn-ghost !px-2.5 !py-1.5 !text-xs text-indigo-700">
                                     <i class="fi fi-rr-money-check-edit mr-1"></i> دفع الرواتب
                                 </a>
+                                <button wire:click="confirmerSuppression({{ $e->id }})"
+                                    class="btn-ghost !px-2.5 !py-1.5 !text-xs text-red-700">
+                                    <i class="fi fi-rr-trash mr-1"></i> حذف
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -70,6 +74,26 @@
         </table>
     </div>
     <div class="mt-3">{{ $employes->links() }}</div>
+
+    @if($afficherSuppressionModal)
+        <div class="modal-overlay flex items-center justify-center p-4">
+            <div class="modal-panel max-w-sm p-5 space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                        <i class="fi fi-rr-trash text-red-600 text-base"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-semibold text-slate-900">تأكيد الحذف</h3>
+                        <p class="text-xs text-slate-500">هل أنت متأكد من حذف الموظف <span class="font-medium text-slate-700">{{ $employeASupprimer?->full_name }}</span>؟ لا يمكن التراجع عن هذا الإجراء.</p>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button wire:click="annulerSuppression" class="btn-secondary">إلغاء</button>
+                    <button wire:click="supprimerEmploye" class="btn-danger">تأكيد الحذف</button>
+                </div>
+            </div>
+        </div>
+    @endif
 
     @if($afficherDepensesModal && $employeDetails)
         <div class="modal-overlay flex items-center justify-center p-4">
