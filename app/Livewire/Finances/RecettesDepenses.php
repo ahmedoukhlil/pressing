@@ -115,7 +115,10 @@ class RecettesDepenses extends Component
                 ->whereMonth('date_operation', $this->mois))
             ->when($this->groupePar === 'mois', fn ($q) => $q
                 ->whereYear('date_operation', $this->annee))
+            ->when($this->groupePar === 'annee', fn ($q) => $q
+                ->whereYear('date_operation', $this->annee))
             ->orderByDesc('date_operation')
+            ->limit(500)
             ->get()
             ->map(function (CaisseOperation $operation): array {
                 return [
@@ -300,7 +303,7 @@ class RecettesDepenses extends Component
         $weekStart = $debutMois->copy()->startOfWeek(Carbon::MONDAY);
 
         while ($weekStart->lte($finMois)) {
-            $weekEnd = $weekStart->copy()->endOfWeek(Carbon::MONDAY);
+            $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
             $rangeStart = $weekStart->copy()->max($debutMois);
             $rangeEnd = $weekEnd->copy()->min($finMois);
 
