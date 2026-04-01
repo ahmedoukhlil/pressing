@@ -71,6 +71,40 @@
         </div>
     </div>
 
+    {{-- Recettes du mois ventilées par mode de paiement --}}
+    <div class="card card-body">
+        <div class="flex items-center justify-between mb-3">
+            <div>
+                <h2 class="card-title mb-0">إيرادات الشهر حسب طريقة الدفع</h2>
+                <p class="text-xs text-slate-400 mt-0.5">{{ now()->translatedFormat('F Y') }}</p>
+            </div>
+            <div class="text-right">
+                <p class="text-xs text-slate-500">الإجمالي</p>
+                <p class="text-lg font-bold text-emerald-700 num-ltr">{{ number_format($totalRecettesMois, 2, ',', ' ') }} MRU</p>
+            </div>
+        </div>
+        @if($recettesParMode->isEmpty())
+            <p class="text-sm text-slate-400 text-center py-4">لا توجد إيرادات مسجلة هذا الشهر.</p>
+        @else
+            <div class="space-y-2.5">
+                @foreach($recettesParMode as $item)
+                    @php
+                        $pct = $totalRecettesMois > 0 ? round(($item['total'] / $totalRecettesMois) * 100, 1) : 0;
+                    @endphp
+                    <div>
+                        <div class="flex items-center justify-between text-sm mb-1">
+                            <span class="font-medium text-slate-700">{{ $item['libelle'] }}</span>
+                            <span class="num-ltr text-slate-600 tabular-nums">{{ number_format($item['total'], 2, ',', ' ') }} MRU <span class="text-xs text-slate-400">({{ $pct }}%)</span></span>
+                        </div>
+                        <div class="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                            <div class="h-full rounded-full bg-emerald-500 transition-all" style="width: {{ $pct }}%"></div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </div>
+
     <div class="grid md:grid-cols-3 gap-4" x-show="!simpleMode" x-transition>
         <div class="card card-body">
             <p class="text-sm text-slate-500">إجمالي الطلبات</p>

@@ -2,9 +2,11 @@
 
 namespace App\Livewire;
 
+use App\Models\CaisseOperation;
 use App\Models\Client;
 use App\Models\Commande;
 use App\Models\Depense;
+use App\Models\ModePaiement;
 use Carbon\Carbon;
 use Livewire\Component;
 
@@ -45,6 +47,24 @@ class Dashboard extends Component
                 ->sum('montant'),
         ];
 
+        // Recettes du mois ventilées par mode de paiement
+        $libelles = ModePaiement::query()->pluck('libelle', 'code');
+        $recettesParMode = CaisseOperation::query()
+            ->forCurrentSuccursale()
+            ->whereMonth('date_operation', now()->month)
+            ->whereYear('date_operation', now()->year)
+            ->selectRaw('mode_paiement, SUM(montant_operation) as total')
+            ->groupBy('mode_paiement')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($row) => [
+                'code'    => $row->mode_paiement,
+                'libelle' => $row->mode_paiement ? ($libelles[$row->mode_paiement] ?? $row->mode_paiement) : '-',
+                'total'   => (float) $row->total,
+            ]);
+
+        $totalRecettesMois = $recettesParMode->sum('total');
+
         $commandesProchesEcheance = (clone $commandesNonLivrees)
             ->where('date_depot', '>', $now->copy()->subDays(7))
             ->where('date_depot', '<=', $now->copy()->subDays(5))
@@ -66,6 +86,6 @@ class Dashboard extends Component
                 return $commande;
             });
 
-        return view('livewire.dashboard', compact('stats', 'commandesProchesEcheance', 'commandesHorsDelai'))->layout('layouts.app');
+        return view('livewire.dashboard', compact('stats', 'commandesProchesEcheance', 'commandesHorsDelai', 'recettesParMode', 'totalRecettesMois'))->layout('layouts.app');
     }
 }
