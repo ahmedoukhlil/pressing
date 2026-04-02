@@ -20,8 +20,20 @@
     </style>
 </head>
 <body>
-    <h2>تقرير الطلبات قيد المعالجة</h2>
-    <div class="meta">تاريخ التوليد: {{ $generatedAt->format('Y-m-d H:i') }}</div>
+    <h2>تقرير الطلبات</h2>
+    <div class="meta">
+        تاريخ التوليد: {{ $generatedAt->format('Y-m-d H:i') }}
+        &nbsp;·&nbsp;
+        الفترة: {{ $dateDebut }} إلى {{ $dateFin }}
+        @if($statut)
+            &nbsp;·&nbsp;
+            الحالة:
+            @php $statutLabels = ['en_cours'=>'قيد المعالجة','pret'=>'جاهز','livre'=>'تم التسليم','annule'=>'ملغى']; @endphp
+            {{ $statutLabels[$statut] ?? $statut }}
+        @endif
+        &nbsp;·&nbsp;
+        عدد الطلبات: {{ $commandes->count() }}
+    </div>
 
     <table>
         <thead>

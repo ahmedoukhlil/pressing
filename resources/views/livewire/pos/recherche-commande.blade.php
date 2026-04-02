@@ -16,7 +16,12 @@
                     {{ $commandesARappeler->count() }}
                 </span>
             </button>
-            <a href="{{ route('exports.commandes.pdf') }}" class="btn-secondary !py-2 !px-3">
+            <a href="{{ route('exports.commandes.pdf', array_filter([
+                'date_debut' => $dateDebut ?: now()->toDateString(),
+                'date_fin'   => $dateFin   ?: now()->toDateString(),
+                'statut'     => $filtreStatut,
+                'recherche'  => $recherche,
+            ])) }}" class="btn-secondary !py-2 !px-3">
                 <i class="fi fi-rr-file-pdf text-sm text-red-600/90 shrink-0"></i>
                 <span>تصدير PDF</span>
             </a>

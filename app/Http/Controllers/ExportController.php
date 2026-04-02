@@ -105,19 +105,37 @@ class ExportController extends Controller
             ->values();
     }
 
-    public function commandesPdf()
+    public function commandesPdf(Request $request)
     {
+        $dateDebut  = $request->input('date_debut', now()->toDateString());
+        $dateFin    = $request->input('date_fin', now()->toDateString());
+        $statut     = $request->input('statut', '');
+        $recherche  = $request->input('recherche', '');
+
         $commandes = Commande::query()
             ->forCurrentSuccursale()
             ->with('client')
             ->withSum('details as total_pieces', 'quantite')
-            ->where('statut', 'en_cours')
+            ->when($statut !== '', fn ($q) => $q->where('statut', $statut))
+            ->when($dateDebut !== '', fn ($q) => $q->whereDate('date_depot', '>=', $dateDebut))
+            ->when($dateFin !== '', fn ($q) => $q->whereDate('date_depot', '<=', $dateFin))
+            ->when($recherche !== '', fn ($q) => $q
+                ->whereHas('client', fn ($c) => $c
+                    ->where('nom', 'like', '%' . $recherche . '%')
+                    ->orWhere('prenom', 'like', '%' . $recherche . '%')
+                    ->orWhere('telephone', 'like', '%' . $recherche . '%')
+                )
+                ->orWhere('numero_commande', 'like', '%' . $recherche . '%')
+            )
             ->orderByDesc('date_depot')
             ->get();
 
         $html = view('exports.commandes-pdf', [
-            'commandes' => $commandes,
+            'commandes'   => $commandes,
             'generatedAt' => now(),
+            'dateDebut'   => $dateDebut,
+            'dateFin'     => $dateFin,
+            'statut'      => $statut,
         ])->render();
 
         $mpdf = new Mpdf([
