@@ -55,11 +55,13 @@ class Dashboard extends Component
                 ->forCurrentSuccursale()
                 ->where('statut', '!=', 'annule')
                 ->where('reste_a_payer', '>', 0)
+                ->whereDate('date_depot', $dateSelectionnee)
                 ->sum('reste_a_payer'),
             'commandes_avec_reste' => Commande::query()
                 ->forCurrentSuccursale()
                 ->where('statut', '!=', 'annule')
                 ->where('reste_a_payer', '>', 0)
+                ->whereDate('date_depot', $dateSelectionnee)
                 ->count(),
             'depenses_mois' => (float) Depense::query()
                 ->forCurrentSuccursale()

@@ -53,7 +53,7 @@
             <p class="text-sm text-violet-900/80 flex items-center gap-2 font-medium"><i class="fi fi-rr-receipt text-violet-600"></i> مستحقات غير محصّلة</p>
             <p class="text-2xl font-bold mt-1 text-violet-800"><span class="num-ltr" dir="ltr">{{ number_format($stats['montants_factures_non_percus'], 2, ',', ' ') }} MRU</span></p>
             <p class="text-xs text-violet-700/90 mt-1">
-                مجموع المتبقي على <span class="num-ltr font-semibold">{{ $stats['commandes_avec_reste'] }}</span> طلبًا (فوترة دون اكتمال الدفع)
+                مجموع المتبقي على <span class="num-ltr font-semibold">{{ $stats['commandes_avec_reste'] }}</span> طلبًا بتاريخ إيداع {{ \Carbon\Carbon::parse($dateSelectionnee)->format('d/m/Y') }}
             </p>
             <a href="{{ route('recherche') }}" wire:navigate class="mt-2 inline-block text-[11px] font-semibold text-violet-700 hover:text-violet-950 underline-offset-2 hover:underline">
                 متابعة التحصيل ←
