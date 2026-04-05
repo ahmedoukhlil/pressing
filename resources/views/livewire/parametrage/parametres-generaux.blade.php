@@ -38,11 +38,9 @@
                     <tr>
                         <th class="table-th text-center">#</th>
                         <th class="table-th">الزبون</th>
-                        <th class="table-th">ر.أ الإجمالي</th>
                         <th class="table-th">{{ $labelMoisCourant }}</th>
                         <th class="table-th">{{ $labelMoisPrev }}</th>
                         <th class="table-th text-center">التطور</th>
-                        <th class="table-th text-center">مستحقات الشهر</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -69,54 +67,33 @@
                                     <div class="text-[11px] text-slate-400 num-ltr">{{ $row['telephone'] }}</div>
                                 @endif
                             </td>
-                            <td class="table-td font-semibold text-slate-700 num-ltr tabular-nums">
-                                {{ number_format($row['ca_total'], 2, ',', ' ') }} MRU
-                            </td>
-                            <td class="table-td num-ltr tabular-nums {{ $row['ca_mois'] > 0 ? 'text-emerald-700 font-medium' : 'text-slate-400' }}">
-                                {{ $row['ca_mois'] > 0 ? number_format($row['ca_mois'], 2, ',', ' ') . ' MRU' : '-' }}
+                            <td class="table-td font-semibold text-emerald-700 num-ltr tabular-nums">
+                                {{ number_format($row['ca_mois'], 2, ',', ' ') }} MRU
                             </td>
                             <td class="table-td num-ltr tabular-nums text-slate-500">
                                 {{ $row['ca_prev'] > 0 ? number_format($row['ca_prev'], 2, ',', ' ') . ' MRU' : '-' }}
                             </td>
                             <td class="table-td text-center">
-                                @if(!$hasEvolution && $row['ca_mois'] > 0)
-                                    <span class="status-badge bg-blue-50 text-blue-600">
-                                        <i class="fi fi-rr-sparkles"></i> جديد
-                                    </span>
-                                @elseif($hasEvolution && $row['evolution'] > 0)
-                                    <span class="status-badge status-success num-ltr">
-                                        <i class="fi fi-rr-arrow-trend-up"></i> +{{ $row['evolution'] }}%
-                                    </span>
-                                @elseif($hasEvolution && $row['evolution'] < 0)
-                                    <span class="status-badge status-danger num-ltr">
-                                        <i class="fi fi-rr-arrow-trend-down"></i> {{ $row['evolution'] }}%
-                                    </span>
+                                @if($row['evolution'] === null)
+                                    <span class="status-badge bg-blue-50 text-blue-600"><i class="fi fi-rr-sparkles"></i> جديد</span>
+                                @elseif($row['evolution'] > 0)
+                                    <span class="status-badge status-success num-ltr"><i class="fi fi-rr-arrow-trend-up"></i> +{{ $row['evolution'] }}%</span>
+                                @elseif($row['evolution'] < 0)
+                                    <span class="status-badge status-danger num-ltr"><i class="fi fi-rr-arrow-trend-down"></i> {{ $row['evolution'] }}%</span>
                                 @else
                                     <span class="status-badge">—</span>
-                                @endif
-                            </td>
-                            <td class="table-td text-center">
-                                @if($row['impayes_mois'] > 0)
-                                    <span class="status-badge status-warning num-ltr" title="مبالغ غير محصّلة بعد">
-                                        <i class="fi fi-rr-clock"></i> {{ number_format($row['impayes_mois'], 2, ',', ' ') }} MRU
-                                    </span>
-                                @else
-                                    <span class="status-badge status-success"><i class="fi fi-rr-check"></i> مسدّد</span>
                                 @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="table-td text-center text-gray-500">لا توجد بيانات.</td>
+                            <td colspan="5" class="table-td text-center text-gray-500">لا توجد بيانات.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
 
-        @if($classement->hasPages())
-            <div>{{ $classement->links() }}</div>
-        @endif
     </div>
 
     {{-- Paramètres --}}

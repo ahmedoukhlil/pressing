@@ -2,17 +2,14 @@
 
 namespace App\Livewire\Parametrage;
 
+use App\Models\CaisseOperation;
 use App\Models\Client;
-use App\Models\Commande;
 use App\Models\Setting;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Livewire\Component;
-use Livewire\WithPagination;
 
 class ParametresGeneraux extends Component
 {
-    use WithPagination;
 
     public string $nomPressing = '';
     public string $adresse = '';
@@ -36,9 +33,6 @@ class ParametresGeneraux extends Component
         $this->telephone    = (string) ($settings['telephone_pressing'] ?? '');
         $this->footerTicket = (string) ($settings['footer_ticket'] ?? '');
     }
-
-    public function updatingMoisCA(): void { $this->resetPage(); }
-    public function updatingAnneeCA(): void { $this->resetPage(); }
 
     public function sauvegarder(): void
     {
@@ -66,70 +60,44 @@ class ParametresGeneraux extends Component
         $debutPrevMois = $debutMois->copy()->subMonth()->startOfDay();
         $finPrevMois   = $debutMois->copy()->subMonth()->endOfMonth()->endOfDay();
 
-        $baseQuery = fn () => Commande::query()
+        // Top 10 clients par montants encaissés (mois courant)
+        $rows = CaisseOperation::query()
             ->forCurrentSuccursale()
-            ->where('statut', '!=', 'annule');
-
-        // CA mois courant par client (montant facturé)
-        $caMois = ($baseQuery)()
-            ->whereBetween('date_depot', [$debutMois, $finMois])
-            ->selectRaw('fk_id_client, SUM(montant_total) as ca, SUM(reste_a_payer) as impayes')
+            ->whereNotNull('fk_id_client')
+            ->whereBetween('date_operation', [$debutMois, $finMois])
+            ->selectRaw('fk_id_client, SUM(montant_operation) as ca_mois')
             ->groupBy('fk_id_client')
-            ->get()
-            ->keyBy('fk_id_client');
+            ->orderByDesc('ca_mois')
+            ->limit(10)
+            ->get();
 
-        // CA mois précédent par client
-        $caPrevMois = ($baseQuery)()
-            ->whereBetween('date_depot', [$debutPrevMois, $finPrevMois])
-            ->selectRaw('fk_id_client, SUM(montant_total) as ca')
+        $clientIds = $rows->pluck('fk_id_client');
+
+        // Mois précédent pour les mêmes clients
+        $caPrevMois = CaisseOperation::query()
+            ->forCurrentSuccursale()
+            ->whereIn('fk_id_client', $clientIds)
+            ->whereBetween('date_operation', [$debutPrevMois, $finPrevMois])
+            ->selectRaw('fk_id_client, SUM(montant_operation) as ca')
             ->groupBy('fk_id_client')
             ->pluck('ca', 'fk_id_client');
 
-        // CA total (tous temps) par client pour tri
-        $caTotal = ($baseQuery)()
-            ->selectRaw('fk_id_client, SUM(montant_total) as ca')
-            ->groupBy('fk_id_client')
-            ->orderByDesc('ca')
-            ->pluck('ca', 'fk_id_client');
+        $clients = Client::query()->whereIn('id', $clientIds)->get()->keyBy('id');
 
-        $clientIds = $caTotal->keys();
-
-        $clients = Client::query()
-            ->whereIn('id', $clientIds)
-            ->get()
-            ->keyBy('id');
-
-        // Construire la collection triée
-        $classement = $clientIds->map(function ($clientId) use ($clients, $caTotal, $caMois, $caPrevMois) {
-            $client     = $clients[$clientId] ?? null;
-            $moisRow    = $caMois[$clientId] ?? null;
-            $caCourant  = (float) ($moisRow?->ca ?? 0);
-            $impayesMois = (float) ($moisRow?->impayes ?? 0);
-            $caPrev     = (float) ($caPrevMois[$clientId] ?? 0);
-            $evolution  = $caPrev > 0 ? round((($caCourant - $caPrev) / $caPrev) * 100, 1) : null;
+        $classement = $rows->map(function ($row) use ($clients, $caPrevMois) {
+            $client    = $clients[$row->fk_id_client] ?? null;
+            $caCourant = (float) $row->ca_mois;
+            $caPrev    = (float) ($caPrevMois[$row->fk_id_client] ?? 0);
+            $evolution = $caPrev > 0 ? round((($caCourant - $caPrev) / $caPrev) * 100, 1) : null;
 
             return [
-                'id'           => $clientId,
-                'nom'          => $client?->full_name ?? '-',
-                'telephone'    => $client?->telephone ?? '',
-                'code'         => $client?->code_client ?? '',
-                'ca_total'     => (float) ($caTotal[$clientId] ?? 0),
-                'ca_mois'      => $caCourant,
-                'impayes_mois' => $impayesMois,
-                'ca_prev'      => $caPrev,
-                'evolution'    => $evolution,
+                'nom'       => $client?->full_name ?? '-',
+                'telephone' => $client?->telephone ?? '',
+                'ca_mois'   => $caCourant,
+                'ca_prev'   => $caPrev,
+                'evolution' => $evolution,
             ];
-        })->values();
-
-        // Pagination manuelle
-        $page     = $this->getPage();
-        $perPage  = 20;
-        $total    = $classement->count();
-        $items    = $classement->forPage($page, $perPage);
-        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
-            $items, $total, $perPage, $page,
-            ['path' => request()->url()]
-        );
+        });
 
         $moisLabels = [
             1=>'يناير',2=>'فبراير',3=>'مارس',4=>'أبريل',5=>'مايو',6=>'يونيو',
@@ -139,11 +107,10 @@ class ParametresGeneraux extends Component
         $prevMois = $debutMois->copy()->subMonth();
 
         return view('livewire.parametrage.parametres-generaux', [
-            'classement'      => $paginator,
-            'moisLabels'      => $moisLabels,
-            'labelMoisCourant'=> $moisLabels[$this->moisCA] . ' ' . $this->anneeCA,
-            'labelMoisPrev'   => $moisLabels[$prevMois->month] . ' ' . $prevMois->year,
-            'totalCA'         => $caTotal->sum(),
+            'classement'       => $classement,
+            'moisLabels'       => $moisLabels,
+            'labelMoisCourant' => $moisLabels[$this->moisCA] . ' ' . $this->anneeCA,
+            'labelMoisPrev'    => $moisLabels[$prevMois->month] . ' ' . $prevMois->year,
         ])->layout('layouts.app');
     }
 }
