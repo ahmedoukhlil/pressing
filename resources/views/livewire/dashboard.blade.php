@@ -45,9 +45,9 @@
             <p class="text-xs text-slate-500 mt-1">من إجمالي <span class="num-ltr">{{ $stats['commandes_total'] }}</span> طلب</p>
         </div>
         <div class="card card-body">
-            <p class="text-sm text-slate-500 flex items-center gap-2"><i class="fi fi-rr-money-bill-wave text-emerald-600"></i> المبيعات المحصلة اليوم</p>
+            <p class="text-sm text-slate-500 flex items-center gap-2"><i class="fi fi-rr-money-bill-wave text-emerald-600"></i> المبيعات المحصلة</p>
             <p class="text-2xl font-bold mt-1 text-emerald-700"><span class="num-ltr" dir="ltr">{{ number_format($stats['ca_jour'], 2, ',', ' ') }} MRU</span></p>
-            <p class="text-xs text-slate-500 mt-1">مبالغ تم تحصيلها فعليًا</p>
+            <p class="text-xs text-slate-500 mt-1">{{ \Carbon\Carbon::parse($dateSelectionnee)->format('d/m/Y') }}</p>
         </div>
         <div class="card card-body border border-violet-100 bg-violet-50/40 shadow-sm ring-1 ring-violet-100/80">
             <p class="text-sm text-violet-900/80 flex items-center gap-2 font-medium"><i class="fi fi-rr-receipt text-violet-600"></i> مستحقات غير محصّلة</p>

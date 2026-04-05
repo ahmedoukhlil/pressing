@@ -50,7 +50,7 @@ class Dashboard extends Component
             'commandes_du_jour' => Commande::query()->forCurrentSuccursale()->whereDate('date_depot', $today)->count(),
             'en_cours' => Commande::query()->forCurrentSuccursale()->where('statut', 'en_cours')->count(),
             'pret' => Commande::query()->forCurrentSuccursale()->where('statut', 'pret')->count(),
-            'ca_jour' => (float) CaisseOperation::query()->forCurrentSuccursale()->whereDate('date_operation', $today)->sum('montant_operation'),
+            'ca_jour' => (float) CaisseOperation::query()->forCurrentSuccursale()->whereDate('date_operation', $dateSelectionnee)->sum('montant_operation'),
             'montants_factures_non_percus' => (float) Commande::query()
                 ->forCurrentSuccursale()
                 ->where('statut', '!=', 'annule')
