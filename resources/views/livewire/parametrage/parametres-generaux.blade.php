@@ -45,20 +45,17 @@
                 </thead>
                 <tbody>
                     @forelse($classement as $row)
-                        @php
-                            $rang = ($classement->currentPage() - 1) * $classement->perPage() + $loop->iteration;
-                            $hasEvolution = $row['evolution'] !== null;
-                        @endphp
+                        @php $hasEvolution = $row['evolution'] !== null; @endphp
                         <tr class="table-row">
                             <td class="table-td text-center">
-                                @if($rang === 1)
+                                @if($loop->iteration === 1)
                                     <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-yellow-400 text-white text-xs font-bold">1</span>
-                                @elseif($rang === 2)
+                                @elseif($loop->iteration === 2)
                                     <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-300 text-white text-xs font-bold">2</span>
-                                @elseif($rang === 3)
+                                @elseif($loop->iteration === 3)
                                     <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-600 text-white text-xs font-bold">3</span>
                                 @else
-                                    <span class="text-xs text-slate-400 num-ltr">{{ $rang }}</span>
+                                    <span class="text-xs text-slate-400 num-ltr">{{ $loop->iteration }}</span>
                                 @endif
                             </td>
                             <td class="table-td">
