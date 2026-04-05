@@ -33,7 +33,7 @@
         </div>
 
         <div class="table-wrap">
-            <table class="table-base">
+            <table class="table-base" dir="rtl">
                 <thead class="table-head">
                     <tr>
                         <th class="table-th text-center">#</th>
