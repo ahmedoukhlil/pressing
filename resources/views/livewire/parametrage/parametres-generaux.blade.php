@@ -38,8 +38,8 @@
                     <tr>
                         <th class="table-th text-center">#</th>
                         <th class="table-th">الزبون</th>
-                        <th class="table-th">{{ $labelMoisCourant }}</th>
-                        <th class="table-th">{{ $labelMoisPrev }}</th>
+                        <th class="table-th"><span dir="rtl">{{ $labelMoisCourant }}</span></th>
+                        <th class="table-th"><span dir="rtl">{{ $labelMoisPrev }}</span></th>
                         <th class="table-th text-center">التطور</th>
                     </tr>
                 </thead>
