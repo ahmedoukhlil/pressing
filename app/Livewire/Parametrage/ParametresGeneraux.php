@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Parametrage;
 
+use App\Models\CaisseOperation;
 use App\Models\Client;
-use App\Models\Commande;
 use App\Models\Setting;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -66,29 +66,29 @@ class ParametresGeneraux extends Component
         $debutPrevMois = $debutMois->copy()->subMonth()->startOfDay();
         $finPrevMois   = $debutMois->copy()->subMonth()->endOfMonth()->endOfDay();
 
-        // CA mois courant par client
-        $caMois = Commande::query()
+        // CA mois courant par client (via CaisseOperation = montants réellement encaissés)
+        $caMois = CaisseOperation::query()
             ->forCurrentSuccursale()
-            ->where('statut', '!=', 'annule')
-            ->whereBetween('date_depot', [$debutMois, $finMois])
-            ->selectRaw('fk_id_client, SUM(montant_paye) as ca')
+            ->whereNotNull('fk_id_client')
+            ->whereBetween('date_operation', [$debutMois, $finMois])
+            ->selectRaw('fk_id_client, SUM(montant_operation) as ca')
             ->groupBy('fk_id_client')
             ->pluck('ca', 'fk_id_client');
 
         // CA mois précédent par client
-        $caPrevMois = Commande::query()
+        $caPrevMois = CaisseOperation::query()
             ->forCurrentSuccursale()
-            ->where('statut', '!=', 'annule')
-            ->whereBetween('date_depot', [$debutPrevMois, $finPrevMois])
-            ->selectRaw('fk_id_client, SUM(montant_paye) as ca')
+            ->whereNotNull('fk_id_client')
+            ->whereBetween('date_operation', [$debutPrevMois, $finPrevMois])
+            ->selectRaw('fk_id_client, SUM(montant_operation) as ca')
             ->groupBy('fk_id_client')
             ->pluck('ca', 'fk_id_client');
 
         // CA total (tous temps) par client pour tri
-        $caTotal = Commande::query()
+        $caTotal = CaisseOperation::query()
             ->forCurrentSuccursale()
-            ->where('statut', '!=', 'annule')
-            ->selectRaw('fk_id_client, SUM(montant_paye) as ca')
+            ->whereNotNull('fk_id_client')
+            ->selectRaw('fk_id_client, SUM(montant_operation) as ca')
             ->groupBy('fk_id_client')
             ->orderByDesc('ca')
             ->pluck('ca', 'fk_id_client');
