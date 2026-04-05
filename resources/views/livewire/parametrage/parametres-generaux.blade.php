@@ -42,6 +42,7 @@
                         <th class="table-th">{{ $labelMoisCourant }}</th>
                         <th class="table-th">{{ $labelMoisPrev }}</th>
                         <th class="table-th text-center">التطور</th>
+                        <th class="table-th text-center">مستحقات الشهر</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -94,10 +95,19 @@
                                     <span class="status-badge">—</span>
                                 @endif
                             </td>
+                            <td class="table-td text-center">
+                                @if($row['impayes_mois'] > 0)
+                                    <span class="status-badge status-warning num-ltr" title="مبالغ غير محصّلة بعد">
+                                        <i class="fi fi-rr-clock"></i> {{ number_format($row['impayes_mois'], 2, ',', ' ') }} MRU
+                                    </span>
+                                @else
+                                    <span class="status-badge status-success"><i class="fi fi-rr-check"></i> مسدّد</span>
+                                @endif
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="table-td text-center text-gray-500">لا توجد بيانات.</td>
+                            <td colspan="7" class="table-td text-center text-gray-500">لا توجد بيانات.</td>
                         </tr>
                     @endforelse
                 </tbody>

@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Parametrage;
 
-use App\Models\CaisseOperation;
 use App\Models\Client;
+use App\Models\Commande;
 use App\Models\Setting;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -66,29 +66,28 @@ class ParametresGeneraux extends Component
         $debutPrevMois = $debutMois->copy()->subMonth()->startOfDay();
         $finPrevMois   = $debutMois->copy()->subMonth()->endOfMonth()->endOfDay();
 
-        // CA mois courant par client (via CaisseOperation = montants réellement encaissés)
-        $caMois = CaisseOperation::query()
+        $baseQuery = fn () => Commande::query()
             ->forCurrentSuccursale()
-            ->whereNotNull('fk_id_client')
-            ->whereBetween('date_operation', [$debutMois, $finMois])
-            ->selectRaw('fk_id_client, SUM(montant_operation) as ca')
+            ->where('statut', '!=', 'annule');
+
+        // CA mois courant par client (montant facturé)
+        $caMois = ($baseQuery)()
+            ->whereBetween('date_depot', [$debutMois, $finMois])
+            ->selectRaw('fk_id_client, SUM(montant_total) as ca, SUM(reste_a_payer) as impayes')
             ->groupBy('fk_id_client')
-            ->pluck('ca', 'fk_id_client');
+            ->get()
+            ->keyBy('fk_id_client');
 
         // CA mois précédent par client
-        $caPrevMois = CaisseOperation::query()
-            ->forCurrentSuccursale()
-            ->whereNotNull('fk_id_client')
-            ->whereBetween('date_operation', [$debutPrevMois, $finPrevMois])
-            ->selectRaw('fk_id_client, SUM(montant_operation) as ca')
+        $caPrevMois = ($baseQuery)()
+            ->whereBetween('date_depot', [$debutPrevMois, $finPrevMois])
+            ->selectRaw('fk_id_client, SUM(montant_total) as ca')
             ->groupBy('fk_id_client')
             ->pluck('ca', 'fk_id_client');
 
         // CA total (tous temps) par client pour tri
-        $caTotal = CaisseOperation::query()
-            ->forCurrentSuccursale()
-            ->whereNotNull('fk_id_client')
-            ->selectRaw('fk_id_client, SUM(montant_operation) as ca')
+        $caTotal = ($baseQuery)()
+            ->selectRaw('fk_id_client, SUM(montant_total) as ca')
             ->groupBy('fk_id_client')
             ->orderByDesc('ca')
             ->pluck('ca', 'fk_id_client');
@@ -103,19 +102,22 @@ class ParametresGeneraux extends Component
         // Construire la collection triée
         $classement = $clientIds->map(function ($clientId) use ($clients, $caTotal, $caMois, $caPrevMois) {
             $client     = $clients[$clientId] ?? null;
-            $caCourant  = (float) ($caMois[$clientId] ?? 0);
+            $moisRow    = $caMois[$clientId] ?? null;
+            $caCourant  = (float) ($moisRow?->ca ?? 0);
+            $impayesMois = (float) ($moisRow?->impayes ?? 0);
             $caPrev     = (float) ($caPrevMois[$clientId] ?? 0);
             $evolution  = $caPrev > 0 ? round((($caCourant - $caPrev) / $caPrev) * 100, 1) : null;
 
             return [
-                'id'          => $clientId,
-                'nom'         => $client?->full_name ?? '-',
-                'telephone'   => $client?->telephone ?? '',
-                'code'        => $client?->code_client ?? '',
-                'ca_total'    => (float) ($caTotal[$clientId] ?? 0),
-                'ca_mois'     => $caCourant,
-                'ca_prev'     => $caPrev,
-                'evolution'   => $evolution,
+                'id'           => $clientId,
+                'nom'          => $client?->full_name ?? '-',
+                'telephone'    => $client?->telephone ?? '',
+                'code'         => $client?->code_client ?? '',
+                'ca_total'     => (float) ($caTotal[$clientId] ?? 0),
+                'ca_mois'      => $caCourant,
+                'impayes_mois' => $impayesMois,
+                'ca_prev'      => $caPrev,
+                'evolution'    => $evolution,
             ];
         })->values();
 
