@@ -130,6 +130,10 @@
     <p class="muted center" style="font-size: 10px; margin-top: 4px;">
         الموظف : {{ auth()->user()?->name ?? ($commande->user?->name ?? '-') }}
     </p>
+    <div class="line"></div>
+    <p class="center" style="font-size: 10px; color: #555; margin: 6px 0; line-height: 1.6;">
+        المغسلة غير مسؤولة عن الملابس المودعة منذ أكثر من 7 أيام
+    </p>
 </body>
 
 </html>
