@@ -6,6 +6,7 @@ use App\Models\CaisseOperation;
 use App\Models\Commande;
 use App\Models\Consommable;
 use App\Models\Depense;
+use App\Models\ModePaiement;
 use App\Models\StockMouvement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -51,6 +52,8 @@ class ExportController extends Controller
 
     private function operationsFinancieres(string $groupePar, int $annee, int $mois): Collection
     {
+        $libelles = ModePaiement::query()->pluck('libelle', 'code');
+
         $recettes = CaisseOperation::query()
             ->forCurrentSuccursale()
             ->select(['id', 'date_operation', 'designation', 'mode_paiement', 'montant_operation', 'fk_id_commande'])
@@ -61,13 +64,14 @@ class ExportController extends Controller
                 ->whereYear('date_operation', $annee))
             ->orderByDesc('date_operation')
             ->get()
-            ->map(function (CaisseOperation $operation): array {
+            ->map(function (CaisseOperation $operation) use ($libelles): array {
+                $code = $operation->mode_paiement;
                 return [
                     'date' => Carbon::parse($operation->date_operation),
                     'type' => 'recette',
                     'type_label' => 'إيراد',
                     'designation' => $operation->designation ?: ('تحصيل طلب #' . ($operation->fk_id_commande ?? '-')),
-                    'mode_paiement' => $operation->mode_paiement ?: '-',
+                    'mode_paiement' => $code ? ($libelles[$code] ?? $code) : '-',
                     'recette' => (float) $operation->montant_operation,
                     'depense' => 0.0,
                 ];
@@ -84,15 +88,15 @@ class ExportController extends Controller
                 ->whereYear('date_depense', $annee))
             ->orderByDesc('date_depense')
             ->get()
-            ->map(function (Depense $depense): array {
+            ->map(function (Depense $depense) use ($libelles): array {
                 $reference = $depense->reference ? (' - ' . $depense->reference) : '';
-
+                $code = $depense->mode_paiement;
                 return [
                     'date' => Carbon::parse($depense->date_depense),
                     'type' => 'depense',
                     'type_label' => 'مصروف',
                     'designation' => ($depense->designation ?: 'مصروف') . $reference,
-                    'mode_paiement' => $depense->mode_paiement ?: '-',
+                    'mode_paiement' => $code ? ($libelles[$code] ?? $code) : '-',
                     'recette' => 0.0,
                     'depense' => (float) $depense->montant,
                 ];
@@ -101,7 +105,6 @@ class ExportController extends Controller
         return $recettes
             ->merge($depenses)
             ->sortByDesc(fn (array $operation) => $operation['date'])
-            ->take(2000)
             ->values();
     }
 
@@ -281,40 +284,72 @@ class ExportController extends Controller
 
         $totalRecettes = round((float) $operations->sum('recette'), 2);
         $totalDepenses = round((float) $operations->sum('depense'), 2);
-        $beneficeNet = round($totalRecettes - $totalDepenses, 2);
-        $periodeLabel = $this->libellePeriode($groupePar, $annee, $mois);
+        $beneficeNet   = round($totalRecettes - $totalDepenses, 2);
+        $periodeLabel  = $this->libellePeriode($groupePar, $annee, $mois);
 
         $fileName = 'finances-details-' . now()->format('Ymd-His') . '.xls';
 
-        return response()->streamDownload(function () use ($operations, $periodeLabel, $totalRecettes, $totalDepenses, $beneficeNet) {
-            $handle = fopen('php://output', 'wb');
+        $e = fn (string $v): string => htmlspecialchars($v, ENT_QUOTES | ENT_XML1, 'UTF-8');
 
-            // UTF-8 BOM for Excel Arabic support.
-            fwrite($handle, "\xEF\xBB\xBF");
+        $cell = fn (string $type, string $val, string $style = ''): string =>
+            '<Cell' . ($style ? " ss:StyleID=\"{$style}\"" : '') . '>'
+            . "<Data ss:Type=\"{$type}\">{$val}</Data></Cell>";
 
-            fputcsv($handle, ['تقرير التفاصيل المالية (إيرادات/مصروفات)'], "\t");
-            fputcsv($handle, ['الفترة', $periodeLabel], "\t");
-            fputcsv($handle, ['إجمالي الإيرادات', number_format($totalRecettes, 2, '.', '')], "\t");
-            fputcsv($handle, ['إجمالي المصروفات', number_format($totalDepenses, 2, '.', '')], "\t");
-            fputcsv($handle, ['صافي الربح', number_format($beneficeNet, 2, '.', '')], "\t");
-            fputcsv($handle, [], "\t");
+        $numFmt  = fn (float $v): string => number_format($v, 2, '.', '');
 
-            fputcsv($handle, ['التاريخ', 'النوع', 'البيان', 'طريقة الدفع', 'إيراد (MRU)', 'مصروف (MRU)'], "\t");
+        $rows = '';
 
-            foreach ($operations as $operation) {
-                fputcsv($handle, [
-                    $operation['date']->format('Y-m-d H:i'),
-                    $operation['type_label'],
-                    $operation['designation'],
-                    $operation['mode_paiement'],
-                    $operation['recette'] > 0 ? number_format((float) $operation['recette'], 2, '.', '') : '',
-                    $operation['depense'] > 0 ? number_format((float) $operation['depense'], 2, '.', '') : '',
-                ], "\t");
-            }
+        // En-tête récapitulatif
+        $rows .= '<Row><Cell ss:MergeAcross="5"><Data ss:Type="String">' . $e('تقرير التفاصيل المالية (إيرادات/مصروفات)') . '</Data></Cell></Row>';
+        $rows .= '<Row>' . $cell('String', $e('الفترة'), 'Bold') . $cell('String', $e($periodeLabel)) . '</Row>';
+        $rows .= '<Row>' . $cell('String', $e('إجمالي الإيرادات'), 'Bold') . $cell('Number', $numFmt($totalRecettes)) . '</Row>';
+        $rows .= '<Row>' . $cell('String', $e('إجمالي المصروفات'), 'Bold') . $cell('Number', $numFmt($totalDepenses)) . '</Row>';
+        $rows .= '<Row>' . $cell('String', $e('صافي الربح'), 'Bold') . $cell('Number', $numFmt($beneficeNet)) . '</Row>';
+        $rows .= '<Row/>';
 
-            fclose($handle);
-        }, $fileName, [
-            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
+        // En-tête colonnes
+        $rows .= '<Row>'
+            . $cell('String', $e('التاريخ'), 'Bold')
+            . $cell('String', $e('النوع'), 'Bold')
+            . $cell('String', $e('البيان'), 'Bold')
+            . $cell('String', $e('طريقة الدفع'), 'Bold')
+            . $cell('String', $e('إيراد (MRU)'), 'Bold')
+            . $cell('String', $e('مصروف (MRU)'), 'Bold')
+            . '</Row>';
+
+        foreach ($operations as $op) {
+            $rows .= '<Row>'
+                . $cell('String', $e($op['date']->format('Y-m-d H:i')))
+                . $cell('String', $e($op['type_label']))
+                . $cell('String', $e($op['designation']))
+                . $cell('String', $e($op['mode_paiement']))
+                . ($op['recette'] > 0 ? $cell('Number', $numFmt((float) $op['recette'])) : $cell('String', ''))
+                . ($op['depense'] > 0 ? $cell('Number', $numFmt((float) $op['depense'])) : $cell('String', ''))
+                . '</Row>';
+        }
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>'
+            . '<?mso-application progid="Excel.Sheet"?>'
+            . '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"'
+            . ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"'
+            . ' xmlns:x="urn:schemas-microsoft-com:office:excel">'
+            . '<Styles>'
+            . '<Style ss:ID="Bold"><Font ss:Bold="1"/></Style>'
+            . '</Styles>'
+            . '<Worksheet ss:Name="' . $e('التفاصيل المالية') . '">'
+            . '<Table>'
+            . $rows
+            . '</Table>'
+            . '<WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">'
+            . '<DisplayRightToLeft/>'
+            . '</WorksheetOptions>'
+            . '</Worksheet>'
+            . '</Workbook>';
+
+        return response($xml, 200, [
+            'Content-Type'        => 'application/vnd.ms-excel; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+            'Pragma'              => 'no-cache',
         ]);
     }
 }
