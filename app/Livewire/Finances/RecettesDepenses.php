@@ -361,7 +361,7 @@ class RecettesDepenses extends Component
             ->forCurrentSuccursale()
             ->where('statut', 'validee')
             ->whereBetween('date_depense', [$debut->toDateString(), $fin->toDateString()])
-            ->selectRaw('date_depense as periode, SUM(montant) as total')
+            ->selectRaw('DATE(date_depense) as periode, SUM(montant) as total')
             ->groupBy('periode')
             ->pluck('total', 'periode');
 
