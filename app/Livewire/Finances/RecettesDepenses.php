@@ -345,6 +345,14 @@ class RecettesDepenses extends Component
 
     /* ─── Groupage par jour (mois courant sélectionné) ─────────── */
 
+    private function moisAr(): array
+    {
+        return [
+            1=>'يناير',2=>'فبراير',3=>'مارس',4=>'أبريل',5=>'مايو',6=>'يونيو',
+            7=>'يوليو',8=>'أغسطس',9=>'سبتمبر',10=>'أكتوبر',11=>'نوفمبر',12=>'ديسمبر',
+        ];
+    }
+
     private function lignesParJour(): Collection
     {
         $debut = Carbon::createFromDate($this->annee, $this->mois, 1)->startOfDay();
@@ -376,7 +384,7 @@ class RecettesDepenses extends Component
             $imp = (float) ($impayes[$key] ?? 0);
             if ($r > 0 || $d > 0 || $imp > 0) {
                 $jours->push([
-                    'label'    => $cursor->translatedFormat('d M Y'),
+                    'label'    => $cursor->format('d') . ' ' . $this->moisAr()[$cursor->month] . ' ' . $cursor->format('Y'),
                     'recettes' => $r,
                     'depenses' => $d,
                     'net'      => round($r - $d, 2),
@@ -432,7 +440,9 @@ class RecettesDepenses extends Component
 
             if ($r > 0 || $d > 0 || $imp > 0) {
                 $lignes->push([
-                    'label' => $rangeStart->translatedFormat('d M') . ' – ' . $rangeEnd->translatedFormat('d M Y'),
+                    'label' => $rangeStart->format('d') . ' ' . $this->moisAr()[$rangeStart->month]
+                             . ' – '
+                             . $rangeEnd->format('d') . ' ' . $this->moisAr()[$rangeEnd->month] . ' ' . $rangeEnd->format('Y'),
                     'recettes' => $r,
                     'depenses' => $d,
                     'net' => round($r - $d, 2),
@@ -468,12 +478,7 @@ class RecettesDepenses extends Component
             ->groupBy('periode')
             ->pluck('total', 'periode');
 
-        $moisLabels = [
-            '01' => 'يناير', '02' => 'فبراير', '03' => 'مارس',
-            '04' => 'أبريل', '05' => 'مايو',   '06' => 'يونيو',
-            '07' => 'يوليو', '08' => 'أغسطس',  '09' => 'سبتمبر',
-            '10' => 'أكتوبر','11' => 'نوفمبر',  '12' => 'ديسمبر',
-        ];
+        $moisLabels = $this->moisAr();
 
         $impayes = $this->impayesGroupeesParMois($this->annee);
 
@@ -485,7 +490,7 @@ class RecettesDepenses extends Component
             $imp = (float) ($impayes[$key] ?? 0);
             if ($r > 0 || $d > 0 || $imp > 0) {
                 $lignes->push([
-                    'label'    => $moisLabels[str_pad($m, 2, '0', STR_PAD_LEFT)] . ' ' . $this->annee,
+                    'label'    => $moisLabels[$m] . ' ' . $this->annee,
                     'recettes' => $r,
                     'depenses' => $d,
                     'net'      => round($r - $d, 2),
