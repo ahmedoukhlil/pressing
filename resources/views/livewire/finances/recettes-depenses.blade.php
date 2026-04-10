@@ -346,7 +346,7 @@
         <div class="flex flex-wrap items-center justify-between gap-2">
             <h2 class="text-base font-semibold text-slate-800">كشف تفصيلي للعمليات (إيرادات/مصروفات)</h2>
             <div class="flex flex-wrap items-center gap-2">
-                <span class="text-xs text-slate-500">عدد العمليات: {{ $this->operations->count() }}</span>
+                <span class="text-xs text-slate-500">عدد العمليات: {{ $this->operations->total() }}</span>
                 <a href="{{ route('exports.finances.details.excel', $exportParams) }}" class="btn-secondary !px-2.5 !py-1.5 !text-xs">
                     <i class="fi fi-rr-file-excel mr-1"></i> Excel
                 </a>
@@ -370,7 +370,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                    @forelse($this->operations as $operation)
+                    @forelse($this->operations->items() as $operation)
                         <tr class="hover:bg-slate-50 transition">
                             <td class="table-td !text-right border-slate-100 border-l whitespace-nowrap">
                                 {{ $operation['date']->format('Y-m-d H:i') }}
@@ -409,6 +409,29 @@
                 </tbody>
             </table>
         </div>
+
+        @if($this->operations->hasPages())
+            <div class="flex items-center justify-between gap-3 pt-2 flex-wrap">
+                <span class="text-xs text-slate-500">
+                    صفحة {{ $this->operations->currentPage() }} من {{ $this->operations->lastPage() }}
+                    · {{ $this->operations->total() }} عملية
+                </span>
+                <div class="flex items-center gap-1">
+                    <button wire:click="$set('pageOperations', 1)"
+                            @disabled($this->operations->onFirstPage())
+                            class="btn-secondary !px-2 !py-1 !text-xs disabled:opacity-40">«</button>
+                    <button wire:click="$set('pageOperations', {{ max(1, $pageOperations - 1) }})"
+                            @disabled($this->operations->onFirstPage())
+                            class="btn-secondary !px-2 !py-1 !text-xs disabled:opacity-40">‹</button>
+                    <button wire:click="$set('pageOperations', {{ min($this->operations->lastPage(), $pageOperations + 1) }})"
+                            @disabled(!$this->operations->hasMorePages())
+                            class="btn-secondary !px-2 !py-1 !text-xs disabled:opacity-40">›</button>
+                    <button wire:click="$set('pageOperations', {{ $this->operations->lastPage() }})"
+                            @disabled(!$this->operations->hasMorePages())
+                            class="btn-secondary !px-2 !py-1 !text-xs disabled:opacity-40">»</button>
+                </div>
+            </div>
+        @endif
     </div>
 
 </div>

@@ -6,18 +6,23 @@ use App\Models\CaisseOperation;
 use App\Models\Commande;
 use App\Models\Depense;
 use App\Models\ModePaiement;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class RecettesDepenses extends Component
 {
+    use WithPagination;
+
     public string $groupePar = 'mois'; // jour | semaine | mois | annee
     public int $annee;
     public int $mois;
     public ?string $modeSelectionne = null;
     public bool $afficherDetailMode = false;
+    public int $pageOperations = 1;
 
     public function mount(): void
     {
@@ -27,10 +32,13 @@ class RecettesDepenses extends Component
 
     public function updatedGroupePar(): void
     {
-        // Reset to current period on tab change.
         $this->annee = now()->year;
         $this->mois  = now()->month;
+        $this->pageOperations = 1;
     }
+
+    public function updatedAnnee(): void { $this->pageOperations = 1; }
+    public function updatedMois(): void  { $this->pageOperations = 1; }
 
     public function revenirPeriodeCourante(): void
     {
@@ -198,7 +206,7 @@ class RecettesDepenses extends Component
         return $query;
     }
 
-    public function getOperationsProperty(): Collection
+    public function getOperationsProperty(): LengthAwarePaginator
     {
         $libelles = ModePaiement::query()->pluck('libelle', 'code');
 
@@ -212,15 +220,12 @@ class RecettesDepenses extends Component
                 ->whereYear('date_operation', $this->annee))
             ->when($this->groupePar === 'annee', fn ($q) => $q
                 ->whereYear('date_operation', $this->annee))
-            ->orderByDesc('date_operation')
-            ->limit(500)
             ->get()
             ->map(function (CaisseOperation $operation) use ($libelles): array {
                 $code = $operation->mode_paiement;
                 return [
                     'date' => Carbon::parse($operation->date_operation),
                     'type' => 'recette',
-                    'type_label' => 'إيراد',
                     'designation' => $operation->designation ?: ('تحصيل طلب #' . ($operation->fk_id_commande ?? '-')),
                     'mode_paiement' => $code ? ($libelles[$code] ?? $code) : '-',
                     'recette' => (float) $operation->montant_operation,
@@ -237,16 +242,13 @@ class RecettesDepenses extends Component
                 ->whereMonth('date_depense', $this->mois))
             ->when($this->groupePar === 'mois', fn ($q) => $q
                 ->whereYear('date_depense', $this->annee))
-            ->orderByDesc('date_depense')
             ->get()
             ->map(function (Depense $depense) use ($libelles): array {
                 $reference = $depense->reference ? (' - ' . $depense->reference) : '';
                 $code = $depense->mode_paiement;
-
                 return [
                     'date' => Carbon::parse($depense->date_depense),
                     'type' => 'depense',
-                    'type_label' => 'مصروف',
                     'designation' => ($depense->designation ?: 'مصروف') . $reference,
                     'mode_paiement' => $code ? ($libelles[$code] ?? $code) : '-',
                     'recette' => 0.0,
@@ -254,11 +256,18 @@ class RecettesDepenses extends Component
                 ];
             });
 
-        return $recettes
+        $all = $recettes
             ->merge($depenses)
-            ->sortByDesc(fn (array $operation) => $operation['date'])
-            ->take(200)
+            ->sortByDesc(fn (array $op) => $op['date'])
             ->values();
+
+        $perPage = 25;
+        $total   = $all->count();
+        $items   = $all->forPage($this->pageOperations, $perPage)->values();
+
+        return new LengthAwarePaginator($items, $total, $perPage, $this->pageOperations, [
+            'pageName' => 'pageOperations',
+        ]);
     }
 
     public function getPeriodeSelectionneeLabelProperty(): string
