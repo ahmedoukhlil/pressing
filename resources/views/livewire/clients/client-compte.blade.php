@@ -134,6 +134,21 @@
                         <p class="text-sm text-slate-500">لا توجد تفاصيل لهذه الطلبية.</p>
                     @endforelse
                 </div>
+
+                @if($commande->caisseOperations->isNotEmpty())
+                    <div class="rounded-md bg-emerald-50 p-2 mt-2">
+                        <p class="mb-1 text-xs font-medium text-emerald-700">المدفوعات</p>
+                        @foreach($commande->caisseOperations as $op)
+                            <div class="flex items-center justify-between gap-2 text-sm py-1 border-b border-emerald-100 last:border-b-0">
+                                <div class="text-slate-600">
+                                    <span>{{ $modesPaiement[$op->mode_paiement] ?? $op->mode_paiement ?? '-' }}</span>
+                                    <span class="text-slate-400 text-xs num-ltr ml-1">{{ optional($op->date_operation)->format('d/m/Y H:i') }}</span>
+                                </div>
+                                <div class="font-medium text-emerald-700 num-ltr">{{ number_format((float) $op->montant_operation, 2) }} MRU</div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
             </div>
         @empty
             <div class="empty-state">لا توجد طلبات لهذا الزبون.</div>

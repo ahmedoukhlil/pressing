@@ -5,6 +5,7 @@ namespace App\Livewire\Clients;
 use App\Models\Client;
 use App\Models\Commande;
 use App\Models\ClientPointTransaction;
+use App\Models\ModePaiement;
 use App\Support\LoyaltyPointsService;
 use App\Support\SuccursaleContext;
 use Livewire\Component;
@@ -37,7 +38,7 @@ class ClientCompte extends Component
             ->forCurrentSuccursale()
             ->where('fk_id_client', $this->client->id)
             ->orderByDesc('date_depot')
-            ->with(['details.service'])
+            ->with(['details.service', 'caisseOperations'])
             ->paginate(10);
 
         $wallet = $this->client->pointWallet()
@@ -52,6 +53,7 @@ class ClientCompte extends Component
             ->paginate(8, ['*'], 'pointsPage');
 
         $loyaltySettings = LoyaltyPointsService::settings();
+        $modesPaiement = ModePaiement::pluck('libelle', 'code');
 
         $totalFacture = (float) ($totaux->total_facture ?? 0);
         $totalPaye = (float) ($totaux->total_paye ?? 0);
@@ -60,6 +62,7 @@ class ClientCompte extends Component
 
         return view('livewire.clients.client-compte', [
             'commandes' => $commandes,
+            'modesPaiement' => $modesPaiement,
             'totalFacture' => $totalFacture,
             'totalPaye' => $totalPaye,
             'clientDoit' => $clientDoit,
