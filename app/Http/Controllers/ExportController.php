@@ -117,7 +117,7 @@ class ExportController extends Controller
 
         $commandes = Commande::query()
             ->forCurrentSuccursale()
-            ->with('client')
+            ->with(['client', 'details.service'])
             ->withSum('details as total_pieces', 'quantite')
             ->when($statut !== '', fn ($q) => $q->where('statut', $statut))
             ->when($dateDebut !== '', fn ($q) => $q->whereDate('date_depot', '>=', $dateDebut))
