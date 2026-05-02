@@ -6,6 +6,7 @@ use App\Models\Depense;
 use App\Models\Employe;
 use App\Models\Fournisseur;
 use App\Models\ModePaiement;
+use App\Models\Pret;
 use App\Models\TypeDepense;
 use App\Support\SuccursaleContext;
 use Illuminate\Validation\Rule;
@@ -36,13 +37,37 @@ class DepenseIndex extends Component
     public string $reference = '';
     public string $notes = '';
     public ?int $depenseAAnnulerId = null;
-    private const TYPE_SALAIRES_LABEL = 'الرواتب';
+    private const TYPE_SALAIRES_LABEL  = 'الرواتب';
     private const TYPE_TRANSPORT_LABEL = 'النقل';
+    private const TYPE_PRET_LABEL      = 'تسديد قرض';
+
+    // Onglet actif
+    public string $onglet = 'depenses'; // depenses | prets
+
+    // Formulaire prêt
+    public bool $afficherFormPret = false;
+    public ?int  $pretEditId      = null;
+    public string $pretDatePret   = '';
+    public string $pretPreteur    = '';
+    public string $pretMontant    = '';
+    public string $pretMode       = 'especes';
+    public string $pretNotes      = '';
+
+    // Remboursement
+    public bool  $afficherFormRemboursement = false;
+    public ?int  $pretARembourserId         = null;
+    public string $rembDate                 = '';
+    public string $rembMontant              = '';
+    public string $rembMode                 = 'especes';
+    public string $rembNotes                = '';
 
     public function mount(): void
     {
-        $this->dateDepense = now()->toDateString();
+        $this->dateDepense  = now()->toDateString();
+        $this->pretDatePret = now()->toDateString();
+        $this->rembDate     = now()->toDateString();
         $this->ensureTypeSalairesActif();
+        $this->ensureTypePretActif();
     }
 
     public function updatingFiltrePeriode(): void
@@ -259,18 +284,176 @@ class DepenseIndex extends Component
         );
     }
 
+    private function ensureTypePretActif(): void
+    {
+        TypeDepense::updateOrCreate(
+            ['libelle' => self::TYPE_PRET_LABEL],
+            ['icone' => '🏦', 'couleur' => '#6366F1', 'actif' => true, 'ordre' => 99]
+        );
+    }
+
+    /* ─── Prêts ──────────────────────────────────────────────────── */
+
+    public function nouveauPret(): void
+    {
+        $this->reset(['pretEditId', 'pretPreteur', 'pretMontant', 'pretNotes']);
+        $this->pretDatePret = now()->toDateString();
+        $this->pretMode     = 'especes';
+        $this->resetErrorBag();
+        $this->afficherFormPret = true;
+    }
+
+    public function editerPret(int $id): void
+    {
+        $pret = Pret::query()->forCurrentSuccursale()->findOrFail($id);
+        $this->pretEditId   = $pret->id;
+        $this->pretDatePret = $pret->date_pret->toDateString();
+        $this->pretPreteur  = $pret->preteur;
+        $this->pretMontant  = (string) $pret->montant;
+        $this->pretMode     = $pret->mode_paiement;
+        $this->pretNotes    = $pret->notes ?? '';
+        $this->resetErrorBag();
+        $this->afficherFormPret = true;
+    }
+
+    public function sauvegarderPret(): void
+    {
+        $codesModes = ModePaiement::actif()->pluck('code')->toArray();
+
+        $this->validate([
+            'pretDatePret' => ['required', 'date'],
+            'pretPreteur'  => ['required', 'string', 'max:255'],
+            'pretMontant'  => ['required', 'numeric', 'min:0.01'],
+            'pretMode'     => ['required', Rule::in($codesModes)],
+        ], [
+            'pretPreteur.required' => 'يرجى إدخال اسم المُقرض.',
+            'pretMontant.required' => 'يرجى إدخال مبلغ القرض.',
+            'pretMode.required'    => 'يرجى اختيار طريقة الاستلام.',
+        ]);
+
+        $data = [
+            'fk_id_succursale' => SuccursaleContext::currentIdForWrite(),
+            'date_pret'        => $this->pretDatePret,
+            'preteur'          => $this->pretPreteur,
+            'montant'          => $this->pretMontant,
+            'mode_paiement'    => $this->pretMode,
+            'notes'            => $this->pretNotes ?: null,
+            'fk_id_user'       => auth()->id(),
+        ];
+
+        if ($this->pretEditId) {
+            $pret = Pret::query()->forCurrentSuccursale()->findOrFail($this->pretEditId);
+            $pret->update($data);
+            $pret->recalculerMontantRembourse();
+            $this->dispatch('notify', type: 'success', message: 'تم تحديث القرض.');
+        } else {
+            Pret::create($data);
+            $this->dispatch('notify', type: 'success', message: 'تم تسجيل القرض.');
+        }
+
+        $this->fermerFormPret();
+    }
+
+    public function fermerFormPret(): void
+    {
+        $this->afficherFormPret = false;
+        $this->reset(['pretEditId', 'pretPreteur', 'pretMontant', 'pretNotes']);
+        $this->pretDatePret = now()->toDateString();
+        $this->pretMode     = 'especes';
+        $this->resetErrorBag();
+    }
+
+    public function ouvrirRemboursement(int $pretId): void
+    {
+        $this->pretARembourserId = $pretId;
+        $this->rembDate          = now()->toDateString();
+        $this->rembMontant       = '';
+        $this->rembMode          = 'especes';
+        $this->rembNotes         = '';
+        $this->resetErrorBag();
+        $this->afficherFormRemboursement = true;
+    }
+
+    public function fermerRemboursement(): void
+    {
+        $this->afficherFormRemboursement = false;
+        $this->pretARembourserId         = null;
+        $this->reset(['rembMontant', 'rembNotes']);
+        $this->rembDate = now()->toDateString();
+        $this->rembMode = 'especes';
+        $this->resetErrorBag();
+    }
+
+    public function sauvegarderRemboursement(): void
+    {
+        $codesModes = ModePaiement::actif()->pluck('code')->toArray();
+        $pret       = Pret::query()->forCurrentSuccursale()->findOrFail($this->pretARembourserId);
+
+        $this->validate([
+            'rembDate'    => ['required', 'date'],
+            'rembMontant' => ['required', 'numeric', 'min:0.01', 'max:' . $pret->solde_restant],
+            'rembMode'    => ['required', Rule::in($codesModes)],
+        ], [
+            'rembMontant.required' => 'يرجى إدخال مبلغ التسديد.',
+            'rembMontant.max'      => 'المبلغ يتجاوز الرصيد المتبقي (' . number_format($pret->solde_restant, 2) . ' MRU).',
+        ]);
+
+        $typePret = TypeDepense::where('libelle', self::TYPE_PRET_LABEL)->first();
+
+        Depense::create([
+            'fk_id_succursale'  => SuccursaleContext::currentIdForWrite(),
+            'date_depense'      => now()->toDateString() === $this->rembDate
+                ? now()->toDateTimeString()
+                : $this->rembDate . ' ' . now()->format('H:i:s'),
+            'fk_id_type_depense' => $typePret?->id,
+            'designation'       => 'تسديد قرض - ' . $pret->preteur,
+            'montant'           => $this->rembMontant,
+            'mode_paiement'     => $this->rembMode,
+            'reference'         => 'PRET-' . $pret->id,
+            'notes'             => $this->rembNotes ?: null,
+            'statut'            => 'validee',
+            'fk_id_user'        => auth()->id(),
+        ]);
+
+        $pret->recalculerMontantRembourse();
+
+        $this->dispatch('notify', type: 'success', message: 'تم تسجيل التسديد.');
+        $this->fermerRemboursement();
+    }
+
+    public function getPretsTotauxProperty(): array
+    {
+        $prets = Pret::query()->forCurrentSuccursale()->get();
+        return [
+            'total_emprunte'  => round((float) $prets->sum('montant'), 2),
+            'total_rembourse' => round((float) $prets->sum('montant_rembourse'), 2),
+            'solde_restant'   => round((float) $prets->sum(fn ($p) => $p->solde_restant), 2),
+        ];
+    }
+
     public function render()
     {
         $types = TypeDepense::actif()->get();
 
+        $prets = Pret::query()
+            ->forCurrentSuccursale()
+            ->orderByDesc('date_pret')
+            ->with(['user'])
+            ->paginate(15, ['*'], 'pretsPage');
+
         return view('livewire.depenses.depense-index', [
-            'depenses' => $this->buildQuery()->with(['typeDepense', 'fournisseur', 'employe'])->paginate(20),
-            'types' => $types,
-            'typesSaisie' => $types->filter(fn (TypeDepense $type): bool => $type->libelle !== self::TYPE_SALAIRES_LABEL)->values(),
+            'depenses'     => $this->buildQuery()->with(['typeDepense', 'fournisseur', 'employe'])->paginate(20),
+            'types'        => $types,
+            'typesSaisie'  => $types->filter(fn (TypeDepense $type): bool =>
+                $type->libelle !== self::TYPE_SALAIRES_LABEL &&
+                $type->libelle !== self::TYPE_PRET_LABEL
+            )->values(),
             'fournisseurs' => Fournisseur::actif()->get(),
-            'employes' => Employe::actif()->get(),
-            'modes' => ModePaiement::actif()->get(),
+            'employes'     => Employe::actif()->get(),
+            'modes'        => ModePaiement::actif()->get(),
             'totalPeriode' => $this->total_periode,
+            'prets'        => $prets,
+            'pretsTotaux'  => $this->prets_totaux,
         ])->layout('layouts.app');
     }
 }
