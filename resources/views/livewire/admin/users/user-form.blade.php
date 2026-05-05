@@ -35,16 +35,40 @@
             </div>
         </div>
 
+        {{-- Filiales assignées (multi-sélection) --}}
         <div>
-            <label class="form-label">الفرع *</label>
-            <select wire:model.live="fkIdSuccursale" class="form-field">
-                <option value="">اختر الفرع...</option>
+            <label class="form-label">الفروع المخصصة *</label>
+            <div class="border border-gray-200 rounded-lg divide-y divide-gray-100">
                 @foreach($succursales as $succursale)
-                    <option value="{{ $succursale->id }}">{{ $succursale->nom }}</option>
+                    <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            value="{{ $succursale->id }}"
+                            wire:model.live="succursaleIds"
+                            class="rounded border-gray-300 text-primary"
+                        >
+                        <span class="text-sm">{{ $succursale->nom }}</span>
+                    </label>
+                @endforeach
+            </div>
+            @error('succursaleIds') <div class="form-error">{{ $message }}</div> @enderror
+        </div>
+
+        {{-- Filiale principale (parmi les filiales cochées) --}}
+        @if(count($succursaleIds) > 0)
+        <div>
+            <label class="form-label">الفرع الرئيسي *</label>
+            <select wire:model.live="fkIdSuccursale" class="form-field">
+                <option value="">اختر الفرع الرئيسي...</option>
+                @foreach($succursales as $succursale)
+                    @if(in_array($succursale->id, $succursaleIds))
+                        <option value="{{ $succursale->id }}">{{ $succursale->nom }}</option>
+                    @endif
                 @endforeach
             </select>
             @error('fkIdSuccursale') <div class="form-error">{{ $message }}</div> @enderror
         </div>
+        @endif
 
         <div class="flex justify-end gap-2">
             <a href="{{ route('admin.users.index') }}" wire:navigate class="btn-secondary">رجوع</a>

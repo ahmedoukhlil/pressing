@@ -34,15 +34,24 @@ Route::redirect('/', '/dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::post('/succursale-active', function () {
-        abort_unless(auth()->user()?->can('succursales.switch'), 403);
+        $user = auth()->user();
+        abort_unless($user?->can('succursales.switch') || \App\Support\SuccursaleContext::canSwitch(), 403);
 
         $validated = request()->validate([
             'succursale_id' => ['nullable', 'integer', 'exists:succursales,id'],
         ]);
 
         $succursaleId = $validated['succursale_id'] ?? null;
-        if ($succursaleId && !Succursale::query()->whereKey($succursaleId)->where('actif', true)->exists()) {
-            return back();
+
+        if ($succursaleId) {
+            $succursale = Succursale::query()->whereKey($succursaleId)->where('actif', true)->first();
+            if (!$succursale) {
+                return back();
+            }
+            // Non-gérants can only switch to their assigned succursales
+            if (!\App\Support\SuccursaleContext::isGerant() && !$user->hasAccessToSuccursale($succursaleId)) {
+                abort(403);
+            }
         }
 
         session(['active_succursale_id' => $succursaleId]);

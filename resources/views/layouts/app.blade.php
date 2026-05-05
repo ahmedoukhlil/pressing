@@ -129,9 +129,15 @@
                         default => ['label' => 'التطبيق', 'hint' => ''],
                     };
                     $pageTitle = $title ?? $sectionMeta['label'];
-                    $canSwitchSuccursale = auth()->user()?->can('succursales.switch');
-                    $succursales = $canSwitchSuccursale ? \App\Models\Succursale::query()->where('actif', true)->orderBy('nom')->get(['id', 'nom']) : collect();
+                    $canSwitchSuccursale = auth()->user()?->can('succursales.switch') || \App\Support\SuccursaleContext::canSwitch();
                     $activeSuccursaleId = session('active_succursale_id');
+                    if (auth()->user()?->can('succursales.switch')) {
+                        $succursales = \App\Models\Succursale::query()->where('actif', true)->orderBy('nom')->get(['id', 'nom']);
+                    } elseif (\App\Support\SuccursaleContext::canSwitch()) {
+                        $succursales = auth()->user()->succursales()->where('actif', true)->orderBy('nom')->get(['succursales.id', 'succursales.nom']);
+                    } else {
+                        $succursales = collect();
+                    }
                 ?>
                 <div class="min-w-0 flex items-center gap-2">
                     <button
@@ -153,7 +159,9 @@
                         <form method="POST" action="{{ route('succursales.active') }}">
                             @csrf
                             <select name="succursale_id" onchange="this.form.submit()" class="rounded border-slate-300 text-xs py-1 px-2 leading-tight">
-                                <option value="">جميع الفروع</option>
+                                @if(auth()->user()?->can('succursales.switch'))
+                                    <option value="">جميع الفروع</option>
+                                @endif
                                 @foreach($succursales as $succursale)
                                     <option value="{{ $succursale->id }}" @selected((int) $activeSuccursaleId === (int) $succursale->id)>
                                         {{ $succursale->nom }}
@@ -163,7 +171,7 @@
                         </form>
                     @else
                         <span class="hidden sm:inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">
-                            {{ auth()->user()?->succursale?->nom ?? 'بدون فرع' }}
+                            {{ auth()->user()?->succursale?->nom ?? auth()->user()?->succursales()->value('nom') ?? 'بدون فرع' }}
                         </span>
                     @endif
 

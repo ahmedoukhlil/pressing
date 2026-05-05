@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -52,5 +53,15 @@ class User extends Authenticatable
     public function succursale(): BelongsTo
     {
         return $this->belongsTo(Succursale::class, 'fk_id_succursale');
+    }
+
+    public function succursales(): BelongsToMany
+    {
+        return $this->belongsToMany(Succursale::class, 'succursale_user');
+    }
+
+    public function hasAccessToSuccursale(int $succursaleId): bool
+    {
+        return $this->succursales()->whereKey($succursaleId)->exists();
     }
 }
